@@ -14,7 +14,7 @@ Point :: struct {
 }
 
 // Shortcut for creating a [Point].
-p :: proc(x: int, y: int) -> Point {
+p :: proc(x, y: int) -> Point {
 	return Point{x, y}
 }
 
