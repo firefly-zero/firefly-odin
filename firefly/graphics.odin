@@ -14,7 +14,7 @@ Point :: struct {
 }
 
 // Shortcut for creating a [Point].
-p :: proc(x, y: int) -> Point {
+p :: proc "contextless" (x, y: int) -> Point {
 	return Point{x, y}
 }
 
@@ -70,12 +70,12 @@ Style :: struct {
 }
 
 // Make [Style] for a solid shape (without stroke).
-solid :: proc(c: Color) -> Style {
+solid :: proc "contextless" (c: Color) -> Style {
 	return Style{c, Color.None, 0}
 }
 
 // Make [Style] for an outlined shape (without fill).
-outlined :: proc(c: Color, w: int) -> Style {
+outlined :: proc "contextless" (c: Color, w: int) -> Style {
 	return Style{Color.None, c, w}
 }
 
@@ -86,6 +86,27 @@ LineStyle :: struct {
 }
 
 // A shortcut for creating a new [LineStyle].
-l :: proc(c: Color, w: int) -> LineStyle {
+l :: proc "contextless" (c: Color, w: int) -> LineStyle {
 	return LineStyle{c, w}
+}
+
+
+// Fill the whole frame with the given color.
+clear_screen :: proc "contextless" (c: Color) {
+	b_clear_screen(cast(i32)c)
+}
+
+// Draw a triangle.
+draw_triangle :: proc "contextless" (a, b, c: Point, s: Style) {
+	b_draw_triangle(
+		cast(i32)a.x,
+		cast(i32)a.y,
+		cast(i32)b.x,
+		cast(i32)b.y,
+		cast(i32)c.x,
+		cast(i32)c.y,
+		cast(i32)s.fill_color,
+		cast(i32)s.stroke_color,
+		cast(i32)s.stroke_width,
+	)
 }
