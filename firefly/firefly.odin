@@ -190,6 +190,35 @@ clear_screen :: proc "contextless" (c: Color) {
 	b_clear_screen(cast(i32)c)
 }
 
+// Set a color value in the palette.
+set_color :: proc "contextless" (c: Color, v: RGB) {
+	b_set_color(cast(i32)c, cast(i32)v.r, cast(i32)v.g, cast(i32)v.b)
+}
+
+// Set all colors in the color palette.
+set_palette :: proc(colors: [16]RGB) {
+	for i in 1 ..= 16 {
+		set_color(cast(Color)i, colors[i - 1])
+	}
+}
+
+// Draw a single point (1 pixel if scaling is 1).
+draw_point :: proc(p: Point, c: Color) {
+	b_draw_point(cast(i32)p.x, cast(i32)p.y, cast(i32)c)
+}
+
+// Draw a straight line from point a to point b.
+draw_line :: proc(a, b: Point, s: LineStyle) {
+	b_draw_line(
+		cast(i32)a.x,
+		cast(i32)a.y,
+		cast(i32)b.x,
+		cast(i32)b.y,
+		cast(i32)s.color,
+		cast(i32)s.width,
+	)
+}
+
 // Draw a triangle.
 draw_triangle :: proc "contextless" (a, b, c: Point, s: Style) {
 	b_draw_triangle(
