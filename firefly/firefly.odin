@@ -1,5 +1,16 @@
 package firefly
 
+import "core:math"
+
+// Since Odin has no package management, the whole SDK
+// is a single file, to make the distribution less painful.
+
+// -------------- //
+// -- GRAPHICS -- //
+// -------------- //
+_ :: 0
+
+
 // The screen width in pixels.
 width :: 240
 // The screen height in pixels.
@@ -16,6 +27,40 @@ Point :: struct {
 // Shortcut for creating a [Point].
 p :: proc "contextless" (x, y: int) -> Point {
 	return Point{x, y}
+}
+
+// Size of a bounding box for a shape.
+//
+// The width and height must be positive.
+Size :: struct {
+	// The width of the bounding box.
+	w: int,
+	// The height of the bounding box.
+	h: int,
+}
+
+// Shortcut for creating a [Size].
+s :: proc "contextless" (w, h: int) -> Size {
+	return Size{w, h}
+}
+
+
+// An angle between two vectors.
+//
+// Used by [DrawArc] and [DrawSector].
+// Constructed by [degrees] and [radians].
+Angle :: struct {
+	_a: f32,
+}
+
+// Define an angle in radians where Tau (doubled Pi) is the full circle.
+radians :: proc(a: f32) -> Angle {
+	return Angle{a}
+}
+
+// Define an angle in radians where 360.0 is the full circle.
+degrees :: proc(a: f32) -> Angle {
+	return Angle{a * math.PI / 180.0}
 }
 
 Color :: enum u8 {
@@ -55,6 +100,21 @@ Color :: enum u8 {
 	DarkGray   = 16,
 }
 
+// The RGB value of a color in the palette.
+RGB :: struct {
+	// Red component
+	r: u8,
+	// Green component
+	g: u8,
+	// Blue component
+	b: u8,
+}
+
+// Construct a new [RGB].
+rgb :: proc(r, g, b: u8) -> RGB {
+	return RGB{r, g, b}
+}
+
 // Style of a shape.
 Style :: struct {
 	// The color to use to fill the shape.
@@ -90,6 +150,40 @@ l :: proc "contextless" (c: Color, w: int) -> LineStyle {
 	return LineStyle{c, w}
 }
 
+Font :: struct {
+	_raw: []byte,
+}
+
+Image :: struct {
+	_raw: []byte,
+}
+
+SubImage :: struct {
+	image: Image,
+	point: Point,
+	size:  Size,
+}
+
+sub_image :: proc(i: Image, p: Point, s: Size) -> SubImage {
+	return SubImage{i, p, s}
+}
+
+// Canvas is an [Image] that can be drawn upon.
+Canvas :: struct {
+	_raw: []byte,
+}
+
+// Create a new [Canvas].
+canvas :: proc(s: Size) -> Canvas {
+	headerSize := 4
+	bodySize := s.w * s.h / 2
+	raw := make([]byte, headerSize + bodySize)
+	raw[0] = 0x22 // magic number
+	raw[1] = byte(s.w) // width
+	raw[2] = byte(s.w >> 8) // width
+	raw[3] = 255 // transparency
+	return Canvas{raw}
+}
 
 // Fill the whole frame with the given color.
 clear_screen :: proc "contextless" (c: Color) {
@@ -112,7 +206,9 @@ draw_triangle :: proc "contextless" (a, b, c: Point, s: Style) {
 }
 
 
+// -------------- //
 // -- BINDINGS -- //
+// -------------- //
 
 
 foreign import "graphics"
