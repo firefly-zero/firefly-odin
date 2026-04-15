@@ -317,6 +317,66 @@ draw_sector :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
 	)
 }
 
+// Render text using the given font.
+//
+// Unlike in the other drawing functions, here [Point] points not to the top-left corner
+// but to the baseline start position.
+draw_text :: proc(t: string, f: Font, p: Point, c: Color) {
+	textPtr := cast(uintptr)raw_data(t)
+	rawPtr := cast(uintptr)raw_data(f._raw)
+	b_draw_text(
+		textPtr,
+		cast(u32)(len(t)),
+		rawPtr,
+		cast(u32)(len(f._raw)),
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)c,
+	)
+}
+
+// Render a QR code for the given text.
+draw_qr :: proc(t: string, p: Point, black, white: Color) {
+	ptr := cast(uintptr)raw_data(t)
+	b_draw_qr(ptr, cast(u32)(len(t)), cast(i32)p.x, cast(i32)p.y, cast(i32)black, cast(i32)white)
+}
+
+// Render an image at the given point.
+draw_image :: proc(i: Image, p: Point) {
+	rawPtr := cast(uintptr)raw_data(i._raw)
+	b_draw_image(rawPtr, cast(u32)(len(i._raw)), cast(i32)p.x, cast(i32)p.y)
+}
+
+// Draw a subregion of an image.
+//
+// Most often used to draw a sprite from a sprite atlas.
+draw_sub_image :: proc(i: SubImage, p: Point) {
+	rawPtr := cast(uintptr)raw_data(i.image._raw)
+	b_draw_sub_image(
+		rawPtr,
+		cast(u32)(len(i.image._raw)),
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)i.point.x,
+		cast(i32)i.point.y,
+		cast(u32)i.size.w,
+		cast(u32)i.size.h,
+	)
+}
+
+// Set the target image for all subsequent drawing operations.
+set_canvas :: proc(c: Canvas) {
+	rawPtr := cast(uintptr)raw_data(c._raw)
+	b_set_canvas(rawPtr, cast(u32)(len(c._raw)))
+}
+
+// Make all subsequent drawing operations target the screen instead of a canvas.
+//
+// Cancels the effect of [SetCanvas].
+unset_canvas :: proc() {
+	b_unset_canvas()
+}
+
 
 // -------------- //
 // -- BINDINGS -- //
