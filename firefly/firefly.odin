@@ -12,9 +12,9 @@ _ :: 0
 
 
 // The screen width in pixels.
-width :: 240
+WIDTH :: 240
 // The screen height in pixels.
-height :: 240
+HEIGHT :: 240
 
 // A point on the screen.
 //
@@ -322,12 +322,12 @@ draw_sector :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
 // Unlike in the other drawing functions, here [Point] points not to the top-left corner
 // but to the baseline start position.
 draw_text :: proc(t: string, f: Font, p: Point, c: Color) {
-	textPtr := cast(uintptr)raw_data(t)
-	rawPtr := cast(uintptr)raw_data(f._raw)
+	text_ptr := cast(uintptr)raw_data(t)
+	raw_ptr := cast(uintptr)raw_data(f._raw)
 	b_draw_text(
-		textPtr,
+		text_ptr,
 		cast(u32)(len(t)),
-		rawPtr,
+		raw_ptr,
 		cast(u32)(len(f._raw)),
 		cast(i32)p.x,
 		cast(i32)p.y,
@@ -343,8 +343,8 @@ draw_qr :: proc(t: string, p: Point, black, white: Color) {
 
 // Render an image at the given point.
 draw_image :: proc(i: Image, p: Point) {
-	rawPtr := cast(uintptr)raw_data(i._raw)
-	b_draw_image(rawPtr, cast(u32)(len(i._raw)), cast(i32)p.x, cast(i32)p.y)
+	raw_ptr := cast(uintptr)raw_data(i._raw)
+	b_draw_image(raw_ptr, cast(u32)(len(i._raw)), cast(i32)p.x, cast(i32)p.y)
 }
 
 // Draw a subregion of an image.
@@ -377,6 +377,182 @@ unset_canvas :: proc() {
 	b_unset_canvas()
 }
 
+
+// ----------- //
+// -- INPUT -- //
+// ----------- //
+_ :: 0
+
+// The lowest possible value for [Pad.x].
+PAD_MIN_X :: -1000
+// The lowest possible value for [Pad.y].
+PAD_MIN_Y :: -1000
+// The highest possible value for [Pad.x].
+PAD_MAX_X :: 1000
+// The highest possible value for [Pad.y].
+PAD_MAX_Y :: 1000
+
+// The minimum X or Y value when converting [Pad] into [DPad8]
+// for the direction to be considered pressed.
+@(private)
+DPAD8_THRESHOLD :: 400
+
+// The minimum X or Y value when converting [Pad] into [DPad4]
+// for the direction to be considered pressed.
+@(private)
+DPAD4_THRESHOLD :: 300
+
+
+// A finger position on the touch pad.
+//
+// Both X and Y are somewhere the range between -1000 and 1000 (both ends included).
+// The 1000 X is on the right, the 1000 Y is on the top.
+Pad :: struct {
+	x: int,
+	y: int,
+}
+
+
+// 4-directional DPad-like representation of the [Pad].
+//
+// Constructed with [Pad.DPad4]. Useful for simple games and ports.
+// The middle of the pad is a "dead zone" pressing which will not activate any direction.
+//
+// Implements all the same methods as [DPad8].
+DPad4 :: enum u8 {
+	None,
+	Right,
+	Up,
+	Left,
+	Down,
+}
+
+dpad4 :: proc(p: Pad) -> DPad4 {
+	x := p.x
+	y := p.y
+	abs_x := abs(x)
+	abs_y := abs(y)
+	switch {
+	case y > DPAD4_THRESHOLD && y > abs_x:
+		return DPad4.Up
+	case y < -DPAD4_THRESHOLD && -y > abs_x:
+		return DPad4.Down
+	case x > DPAD4_THRESHOLD && x > abs_y:
+		return DPad4.Right
+	case x < -DPAD4_THRESHOLD && -x > abs_y:
+		return DPad4.Left
+	}
+	return DPad4.None
+}
+
+
+// 8-directional DPad-like representation of the [Pad].
+//
+// Constructed with [Pad.DPad8]. Useful for simple games and ports.
+// The middle of the pad is a "dead zone" pressing which will not activate any direction.
+//
+// Invariant: it's not possible for opposite directions (left and right, or down and up)
+// to be active at the same time. However, it's possible for neighboring directions
+// (like up and right) to be active at the same time if the player presses a diagonal.
+//
+// Implements all the same methods as [DPad4].
+DPad8 :: struct {
+	left:  bool,
+	right: bool,
+	up:    bool,
+	down:  bool,
+}
+
+dpad8 :: proc(p: Pad) -> DPad8 {
+	return DPad8 {
+		left = p.x <= -DPAD8_THRESHOLD,
+		right = p.x >= DPAD8_THRESHOLD,
+		up = p.y <= -DPAD8_THRESHOLD,
+		down = p.y >= DPAD8_THRESHOLD,
+	}
+}
+
+
+// State of the buttons.
+Buttons :: struct {
+	// South. The bottom button, like A on the X-Box controller.
+	//
+	// Typically used for confirmation, main action, jump, etc.
+	s:    bool,
+
+	// East. The right button, like B on the X-Box controller.
+	//
+	// Typically used for cancellation, going to previous screen, etc.
+	e:    bool,
+
+	// West. The left button, like X on the X-Box controller.
+	//
+	// Typically used for attack.
+	w:    bool,
+
+	// North. The top button, like Y on the X-Box controller.
+	//
+	// Typically used for a secondary action, like charged attack.
+	n:    bool,
+
+	// The menu button, almost always handled by the runtime.
+	menu: bool,
+}
+
+// Get the current touch pad state.
+//
+// The peer can be [Combined] or one of the [get_peers].
+read_pad :: proc(p: Peer) -> (Pad, bool) {
+	raw := b_read_pad(cast(u32)(p._raw))
+	pressed := raw != 0xffff
+	if !pressed {
+		return Pad{}, false
+	}
+	pad := Pad{int(cast(i16)(raw >> 16)), int(cast(i16)raw)}
+	return pad, true
+}
+
+
+// Get the currently pressed buttons.
+//
+// The peer can be [COMBINED] or one of the [get_peers].
+read_buttons :: proc(p: Peer) -> Buttons {
+	raw := b_read_buttons(cast(u32)p._raw)
+	return Buttons {
+		s = has_bit_set(raw, 0),
+		e = has_bit_set(raw, 1),
+		w = has_bit_set(raw, 2),
+		n = has_bit_set(raw, 3),
+		menu = has_bit_set(raw, 4),
+	}
+}
+
+// Check if the given u32 value has the given bit set.
+@(private)
+has_bit_set :: proc(val: u32, bit: uint) -> bool {
+	return (val >> bit) & 0b1 != 0
+}
+
+// --------- //
+// -- NET -- //
+// -------- //
+
+// The peer ID.
+//
+// Can be obtained by getting the list of [Peers] using [get_peers]
+// and then iterating over it.
+Peer :: struct {
+	_raw: u8,
+}
+
+// A combination of all connected peers.
+//
+// Can be passed in functions like [read_pad] and [read_buttons]
+// to get the combined input of all peers.
+//
+// Useful for single-player games that want in multiplayer to handle
+// inputs from all devices as one input.
+COMBINED :: Peer{0xff}
 
 // -------------- //
 // -- BINDINGS -- //
