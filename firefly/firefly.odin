@@ -533,9 +533,11 @@ has_bit_set :: proc(val: u32, bit: uint) -> bool {
 	return (val >> bit) & 0b1 != 0
 }
 
+
 // --------- //
 // -- NET -- //
 // -------- //
+
 
 // The peer ID.
 //
@@ -553,6 +555,96 @@ Peer :: struct {
 // Useful for single-player games that want in multiplayer to handle
 // inputs from all devices as one input.
 COMBINED :: Peer{0xff}
+
+// The peer representing the current device.
+//
+// Can be compared to [Peer] (using [is_me]) or used to [get_settings].
+//
+// **IMPORTANT:** Using this type may cause state drift between device in multiplayer.
+// See [the docs] for more info.
+//
+// [the docs]: https://docs.fireflyzero.com/dev/net/
+Me :: struct {
+	_raw: u8,
+}
+
+// Check if the given [Peer] represents the current device.
+is_me :: proc(me: Me, p: Peer) -> bool {
+	return me._raw == p._raw
+}
+
+// The list of peers online.
+//
+// Can be obtained using [get_peers].
+Peers :: []Peer
+
+// Stash is a serialized binary state of the app that you want to persist
+// between app runs and to be available in multiplayer.
+//
+// For single-player purposes, you can save data in a regular file
+// using [dump_file]. File saved that way can be bigger (and you can create lots of them)
+// but it cannot be accessed in multiplayer.
+//
+// It's your job to serialize data into a binary stash and later parse it.
+// Stash can be saved using [save_stash] and later read using [load_stash].
+Stash :: []byte
+
+// Get the peer corresponding to the local device.
+get_me :: proc() -> Me {
+	return Me{cast(u8)(b_get_me())}
+}
+
+// Get the list of peers that are currently online.
+//
+// Includes the local device.
+//
+// It can be used to detect if multiplayer is active:
+// if there is more than 1 peer, you're playing with friends.
+get_peers :: proc() -> Peers {
+	peers := b_get_peers()
+	res := make([dynamic]Peer, 0, 32)
+	for peerID in 0 ..< cast(u8)32 {
+		peer := Peer{peerID}
+		if peers >> peer._raw & 1 != 0 {
+			append(&res, peer)
+		}
+	}
+	return res[:]
+}
+
+// Save the given [Stash].
+//
+// When called, the stash for the given peer will be stored in RAM.
+// Calling [load_stash] for the same peer will return that stash.
+// On exit, the runtime will persist the stash in FS.
+// Next time the app starts, calling [load_stash] will restore the stash
+// saved earlier.
+save_stash :: proc(p: Peer, b: Stash) {
+	ptr := cast(uintptr)raw_data(b)
+	b_save_stash(cast(u32)(p._raw), ptr, cast(u32)(len(b)))
+}
+
+// Load [Stash] saved earlier (in this or previous run) by [save_stash].
+//
+// The buffer should be big enough to fit the stash.
+// If it's not, the stash will be truncated.
+// If there is no stash or it's empty, nil is returned.
+//
+// If the given buffer is nil, a new buffer will be allocated
+// big enough to fit the biggest allowed stash. At the moment, it is 80 bytes.
+load_stash :: proc(p: Peer, buf: []byte) -> Stash {
+	buf := buf
+	if buf == nil {
+		buf = make([]byte, 80)
+	}
+	ptr := cast(uintptr)raw_data(buf)
+	size := b_load_stash(cast(u32)(p._raw), ptr, cast(u32)(len(buf)))
+	if size == 0 {
+		return nil
+	}
+	return buf[:size]
+}
+
 
 // -------------- //
 // -- BINDINGS -- //
