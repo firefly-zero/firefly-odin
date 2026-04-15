@@ -1,6 +1,7 @@
 package firefly
 
 import "core:math"
+import "core:strings"
 
 // Since Odin has no package management, the whole SDK
 // is a single file, to make the distribution less painful.
@@ -744,6 +745,7 @@ load_file :: proc(path: string, buf: []byte) -> File {
 }
 
 // Allocate a new buffer and load the file into it.
+@(private)
 load_alloc_file :: proc(path: string) -> File {
 	pathPtr := cast(uintptr)raw_data(path)
 	fileSize := b_get_file_size(pathPtr, cast(u32)(len(path)))
@@ -757,6 +759,7 @@ load_alloc_file :: proc(path: string) -> File {
 }
 
 // Load the file into the given buffer.
+@(private)
 load_file_into :: proc(path: string, buf: []byte) -> File {
 	pathPtr := cast(uintptr)raw_data(path)
 	bufPtr := cast(uintptr)raw_data(buf)
@@ -792,6 +795,161 @@ remove_file :: proc(path: string) {
 	b_remove_file(pathPtr, cast(u32)(len(path)))
 }
 
+
+// ---------- //
+// -- MISC -- //
+// ---------- //
+_ :: 0
+
+
+// Language codes supported by the runtime.
+//
+// English goes first, Toki Pona goes last,
+// everything else in between is alphabetically sorted.
+Language :: enum u16 {
+	English   = 0x656e, // en 🇬🇧 💂
+	Dutch     = 0x6e6c, // nl 🇳🇱 🧀
+	French    = 0x6672, // fr 🇫🇷 🥐
+	German    = 0x6465, // de 🇩🇪 🥨
+	Italian   = 0x6974, // it 🇮🇹 🍕
+	Polish    = 0x706c, // pl 🇵🇱 🥟
+	Romanian  = 0x726f, // ro 🇷🇴 🧛
+	Russian   = 0x7275, // ru 🇷🇺 🪆
+	Spanish   = 0x6573, // es 🇪🇸 🐂
+	Swedish   = 0x7376, // sv 🇸🇪 ❄️
+	Turkish   = 0x7472, // tr 🇹🇷 🕌
+	Ukrainian = 0x756b, // uk 🇺🇦 ✊
+	TokiPona  = 0x7470, // tp 🇨🇦 🙂
+}
+
+Theme :: struct {
+	id:        u8,
+	// The main color of text and boxes.
+	primary:   Color,
+	// The color of disable options, muted text, etc.
+	secondary: Color,
+	// The color of important elements, active options, etc.
+	accent:    Color,
+	// The background color, the most contrast color to primary.
+	bg:        Color,
+}
+
+Settings :: struct {
+	// The preferred color scheme of the player.
+	theme:           Theme,
+
+	// The configured interface language.
+	language:        Language,
+
+	// If true, the screen is rotated 180 degrees.
+	//
+	// In other words, the player holds the device upside-down.
+	// The touchpad is now on the right and the buttons are on the left.
+	rotate_screen:   bool,
+
+	// The player has photosensitivity. The app should avoid any rapid flashes.
+	reduce_flashing: bool,
+
+	// The player wants increased contrast for colors.
+	//
+	// If set, the black and white colors in the default
+	// palette are adjusted automatically. All other colors
+	// in the default palette or all colors in a custom palette
+	// should be adjusted by the app.
+	contrast:        bool,
+
+	// If true, the player wants to see easter eggs, holiday effects, and weird jokes.
+	easter_eggs:     bool,
+}
+
+// Log a debug message.
+log_debug :: proc(t: string) {
+	ptr := cast(uintptr)raw_data(t)
+	b_log_debug(ptr, cast(u32)(len(t)))
+}
+
+// Log an error message.
+log_error :: proc(t: string) {
+	ptr := cast(uintptr)raw_data(t)
+	b_log_error(ptr, cast(u32)(len(t)))
+}
+
+
+// Set the seed used to generate random values.
+set_seed :: proc(seed: u32) {
+	b_set_seed(seed)
+}
+
+// Get a random value.
+get_random :: proc() -> u32 {
+	return b_get_random()
+}
+
+// Get human-readable name of the given peer.
+get_name :: proc(p: Peer) -> string {
+	buf := [16]byte{}
+	ptr := cast(uintptr)raw_data(&buf)
+	length := b_get_name(u32(p._raw), ptr)
+	return strings.string_from_ptr(&buf[0], cast(int)length)
+}
+
+AnyPeer :: union {
+	Peer,
+	Me,
+}
+
+
+// Get the peer's system settings.
+//
+// IMPORTANT: This is the only function that accepts as input not only [Peer]
+// but also [Me], which might lead to a state drift if used incorrectly.
+// See [the docs] for more info.
+//
+// [the docs]: https://docs.fireflyzero.com/dev/net/
+get_settings :: proc(p: AnyPeer) -> Settings {
+	peer_id: u8 = 0
+	switch peer in p {
+	case Peer:
+		peer_id = peer._raw
+	case Me:
+		peer_id = peer._raw
+	}
+	raw := b_get_settings(cast(u32)(peer_id))
+	code := cast(u16)(raw >> 8) | cast(u16)raw
+	language := Language(code)
+	flags := raw >> 16
+	themeRaw := raw >> 32
+	theme := Theme {
+		id        = cast(u8)themeRaw,
+		primary   = parse_color(themeRaw >> 20),
+		secondary = parse_color(themeRaw >> 16),
+		accent    = parse_color(themeRaw >> 12),
+		bg        = parse_color(themeRaw >> 8),
+	}
+	return Settings {
+		theme = theme,
+		language = language,
+		rotate_screen = (flags & 0b0001) != 0,
+		reduce_flashing = (flags & 0b0010) != 0,
+		contrast = (flags & 0b0100) != 0,
+		easter_eggs = (flags & 0b1000) != 0,
+	}
+}
+
+@(private)
+parse_color :: proc(c: u64) -> Color {
+	return cast(Color)(c & 0xf + 1)
+}
+
+// Exit the app after the current update is finished.
+quit :: proc() {
+	b_quit()
+}
+
+// Restart the app.
+restart :: proc() {
+	b_restart()
+}
 
 // -------------- //
 // -- BINDINGS -- //
