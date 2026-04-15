@@ -537,6 +537,7 @@ has_bit_set :: proc(val: u32, bit: uint) -> bool {
 // --------- //
 // -- NET -- //
 // -------- //
+_ :: 0
 
 
 // The peer ID.
@@ -648,6 +649,7 @@ load_stash :: proc(p: Peer, buf: []byte) -> Stash {
 // ----------- //
 // -- STATS -- //
 // ----------- //
+_ :: 0
 
 
 // A badge (aka achievement) ID.
@@ -695,6 +697,99 @@ get_score :: proc(p: Peer, b: Board) -> i16 {
 add_score :: proc(p: Peer, b: Board, v: i16) -> i16 {
 	s := b_add_score(cast(u32)(p._raw), cast(u32)b, cast(i32)v)
 	return cast(i16)s
+}
+
+
+// -------- //
+// -- FS -- //
+// -------- //
+_ :: 0
+
+
+// A file loaded from the filesystem.
+File :: struct {
+	// Binary file content.
+	//
+	// File is an opaque type: you can deconstruct it into an opaque asset
+	// (image, font, etc) or into raw bytes but you cannot construct it.
+	// The goal is to prevent it from being used to construct fonts, images,
+	// and other assets. The format of assets can be changed at any time,
+	// so manual construction would be unsafe between releases.
+	_raw: []byte,
+}
+
+image :: proc(f: File) -> Image {
+	return Image{f._raw}
+}
+
+font :: proc(f: File) -> Font {
+	return Font{f._raw}
+}
+
+// Read a file.
+//
+// It will first lookup file in the app's ROM directory and then check
+// the app writable data directory.
+//
+// If the file does not exist, the Raw value of the returned File will be nil.
+//
+// The second argument is the buffer in which the file should be loaded.
+// If the buffer is smaller than the file content, it gets cut.
+// If the buffer is nil, a new buffer of sufficient size will be allocated.
+load_file :: proc(path: string, buf: []byte) -> File {
+	if buf == nil {
+		return load_alloc_file(path)
+	}
+	return load_file_into(path, buf)
+}
+
+// Allocate a new buffer and load the file into it.
+load_alloc_file :: proc(path: string) -> File {
+	pathPtr := cast(uintptr)raw_data(path)
+	fileSize := b_get_file_size(pathPtr, cast(u32)(len(path)))
+	if fileSize == 0 {
+		return File{nil}
+	}
+	buf := make([]byte, fileSize)
+	bufPtr := cast(uintptr)raw_data(buf)
+	b_load_file(pathPtr, cast(u32)(len(path)), bufPtr, cast(u32)(len(buf)))
+	return File{buf}
+}
+
+// Load the file into the given buffer.
+load_file_into :: proc(path: string, buf: []byte) -> File {
+	pathPtr := cast(uintptr)raw_data(path)
+	bufPtr := cast(uintptr)raw_data(buf)
+	fileSize := b_load_file(pathPtr, cast(u32)(len(path)), bufPtr, cast(u32)(len(buf)))
+	if fileSize == 0 {
+		return File{nil}
+	}
+	return File{buf[:fileSize]}
+}
+
+// Check if the given file exists.
+file_exists :: proc(path: string) -> bool {
+	return get_file_size(path) != 0
+}
+
+// Get size (in bytes) of the given file.
+get_file_size :: proc(path: string) -> int {
+	pathPtr := cast(uintptr)raw_data(path)
+	size := b_get_file_size(pathPtr, cast(u32)(len(path)))
+	return int(size)
+}
+
+// Write a file into the app data dir.
+dump_file :: proc(path: string, raw: []byte) {
+	pathPtr := cast(uintptr)raw_data(path)
+	rawPtr := cast(uintptr)raw_data(raw)
+	b_dump_file(pathPtr, cast(u32)(len(path)), rawPtr, cast(u32)(len(raw)))
+}
+
+// Remove a file from the app data dir.
+remove_file :: proc(path: string) {
+	pathPtr := cast(uintptr)raw_data(path)
+	b_remove_file(pathPtr, cast(u32)(len(path)))
 }
 
 
