@@ -501,7 +501,7 @@ Buttons :: struct {
 
 // Get the current touch pad state.
 //
-// The peer can be [Combined] or one of the [get_peers].
+// The peer can be [COMBINED] or one of the [get_peers].
 read_pad :: proc(p: Peer) -> (Pad, bool) {
 	raw := b_read_pad(cast(u32)(p._raw))
 	pressed := raw != 0xffff
@@ -550,7 +550,7 @@ Peer :: struct {
 // A combination of all connected peers.
 //
 // Can be passed in functions like [read_pad] and [read_buttons]
-// to get the combined input of all peers.
+// to get the COMBINED input of all peers.
 //
 // Useful for single-player games that want in multiplayer to handle
 // inputs from all devices as one input.
@@ -645,6 +645,58 @@ load_stash :: proc(p: Peer, buf: []byte) -> Stash {
 	return buf[:size]
 }
 
+// ----------- //
+// -- STATS -- //
+// ----------- //
+
+
+// A badge (aka achievement) ID.
+Badge :: distinct u8
+
+// A board (aka score board / leader board) ID.
+Board :: distinct u8
+
+Progress :: struct {
+	// How many points the player already has.
+	done: u16,
+	// How many points the player needs to earn the badge.
+	goal: u16,
+}
+
+// Get the progress of earning the badge.
+get_progress :: proc(p: Peer, b: Badge) -> Progress {
+	return add_progress(p, b, 0)
+}
+
+// Add the given value to the progress for the badge.
+//
+// May be negative if you want to decrease the progress.
+// If zero, does not change the progress.
+//
+// If the Peer is [COMBINED], the progress is added to every peer
+// and the returned value is the lowest progress.
+add_progress :: proc(p: Peer, b: Badge, v: i16) -> Progress {
+	r := b_add_progress(cast(u32)(p._raw), cast(u32)b, cast(i32)v)
+	return Progress{done = cast(u16)(r >> 16), goal = cast(u16)r}
+}
+
+// Get the personal best of the player.
+get_score :: proc(p: Peer, b: Board) -> i16 {
+	return add_score(p, b, 0)
+}
+
+// Add the given score to the board.
+//
+// May be negative if you want the lower scores
+// to rank higher. Zero value is not added to the board.
+//
+// If the Peer is [COMBINED], the score is added for every peer
+// and the returned value is the lowest of their best scores.
+add_score :: proc(p: Peer, b: Board, v: i16) -> i16 {
+	s := b_add_score(cast(u32)(p._raw), cast(u32)b, cast(i32)v)
+	return cast(i16)s
+}
+
 
 // -------------- //
 // -- BINDINGS -- //
@@ -653,10 +705,10 @@ load_stash :: proc(p: Peer, buf: []byte) -> Stash {
 
 foreign import "graphics"
 foreign import "input"
-foreign import "misc"
 foreign import "net"
 foreign import "stats"
 foreign import "fs"
+foreign import "misc"
 
 @(private)
 @(default_calling_convention = "contextless")
