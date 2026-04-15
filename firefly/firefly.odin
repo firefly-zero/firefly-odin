@@ -1,3 +1,10 @@
+// The official SDK for making Firefly Zero games.
+//
+// Distributed as a single file.
+//
+// * Copyright: Firefly Zero core team.
+// * License: MIT.
+// * Source: https://github.com/firefly-zero/firefly-odin
 package firefly
 
 import "core:math"
@@ -874,7 +881,6 @@ log_error :: proc(t: string) {
 	b_log_error(ptr, cast(u32)(len(t)))
 }
 
-
 // Set the seed used to generate random values.
 set_seed :: proc(seed: u32) {
 	b_set_seed(seed)
@@ -897,7 +903,6 @@ AnyPeer :: union {
 	Peer,
 	Me,
 }
-
 
 // Get the peer's system settings.
 //
@@ -950,6 +955,7 @@ quit :: proc() {
 restart :: proc() {
 	b_restart()
 }
+
 
 // -------------- //
 // -- BINDINGS -- //
