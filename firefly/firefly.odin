@@ -219,6 +219,61 @@ draw_line :: proc(a, b: Point, s: LineStyle) {
 	)
 }
 
+
+// Draw a rectangle filling the given bounding box.
+draw_rect :: proc(p: Point, b: Size, s: Style) {
+	b_draw_rect(
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)b.w,
+		cast(i32)b.h,
+		cast(i32)s.fill_color,
+		cast(i32)s.stroke_color,
+		cast(i32)s.stroke_width,
+	)
+}
+
+
+// Draw a rectangle with rounded corners.
+draw_rounded_rect :: proc(p: Point, b, c: Size, s: Style) {
+	b_draw_rounded_rect(
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)b.w,
+		cast(i32)b.h,
+		cast(i32)c.w,
+		cast(i32)c.h,
+		cast(i32)s.fill_color,
+		cast(i32)s.stroke_color,
+		cast(i32)s.stroke_width,
+	)
+}
+
+// Draw a circle with the given diameter.
+draw_circle :: proc(p: Point, d: int, s: Style) {
+	b_draw_circle(
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)d,
+		cast(i32)s.fill_color,
+		cast(i32)s.stroke_color,
+		cast(i32)s.stroke_width,
+	)
+}
+
+// Draw an ellipse (oval).
+draw_ellipse :: proc(p: Point, b: Size, s: Style) {
+	b_draw_ellipse(
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)b.w,
+		cast(i32)b.h,
+		cast(i32)s.fill_color,
+		cast(i32)s.stroke_color,
+		cast(i32)s.stroke_width,
+	)
+}
+
 // Draw a triangle.
 draw_triangle :: proc "contextless" (a, b, c: Point, s: Style) {
 	b_draw_triangle(
@@ -228,6 +283,34 @@ draw_triangle :: proc "contextless" (a, b, c: Point, s: Style) {
 		cast(i32)b.y,
 		cast(i32)c.x,
 		cast(i32)c.y,
+		cast(i32)s.fill_color,
+		cast(i32)s.stroke_color,
+		cast(i32)s.stroke_width,
+	)
+}
+
+// Draw an arc.
+draw_arc :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
+	b_draw_arc(
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)d,
+		start._a,
+		sweep._a,
+		cast(i32)s.fill_color,
+		cast(i32)s.stroke_color,
+		cast(i32)s.stroke_width,
+	)
+}
+
+// Draw a sector.
+draw_sector :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
+	b_draw_sector(
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)d,
+		start._a,
+		sweep._a,
 		cast(i32)s.fill_color,
 		cast(i32)s.stroke_color,
 		cast(i32)s.stroke_width,
