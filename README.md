@@ -7,7 +7,7 @@ The [Odin](https://odin-lang.org/) SDK for making [Firefly Zero](https://firefly
 
 ## Installation
 
-Get the [firefly/firefly.odin] file. Now it's yours.
+Get the [firefly/firefly.odin](./firefly/firefly.odin) file. Now it's yours.
 
 ## License
 
