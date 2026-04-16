@@ -1,0 +1,21 @@
+# https://taskfile.dev
+version: "3"
+
+tasks:
+  release:
+    cmds:
+      - test {{.CLI_ARGS}}
+      - git tag {{.CLI_ARGS}}
+      - git push
+      - git push --tags
+      - gh release create --generate-notes v{{.CLI_ARGS}}
+  lint:
+    cmds:
+      - odin check ./firefly -no-entry-point
+  all:
+    desc: run all code formatters, linters, and tests
+    cmds:
+      - task: lint
+  default:
+    cmds:
+      - task: all

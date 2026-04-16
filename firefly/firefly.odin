@@ -7,11 +7,18 @@
 // * Source: https://github.com/firefly-zero/firefly-odin
 package firefly
 
+import "base:runtime"
 import "core:math"
 import "core:strings"
 
 // Since Odin has no package management, the whole SDK
 // is a single file, to make the distribution less painful.
+//
+// Also, you can see `_ :: 0` in some places.
+// This serves as separator between file comments and symbol docs.
+// Unlike any other programming language, Odin considers comments as a single
+// docstring even is there are empty lines between the comment blocks.
+
 
 // -------------- //
 // -- GRAPHICS -- //
