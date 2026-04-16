@@ -62,12 +62,12 @@ Angle :: struct {
 }
 
 // Define an angle in radians where Tau (doubled Pi) is the full circle.
-radians :: proc(a: f32) -> Angle {
+radians :: proc "contextless" (a: f32) -> Angle {
 	return Angle{a}
 }
 
 // Define an angle in radians where 360.0 is the full circle.
-degrees :: proc(a: f32) -> Angle {
+degrees :: proc "contextless" (a: f32) -> Angle {
 	return Angle{a * math.PI / 180.0}
 }
 
@@ -119,7 +119,7 @@ RGB :: struct {
 }
 
 // Construct a new [RGB].
-rgb :: proc(r, g, b: u8) -> RGB {
+rgb :: proc "contextless" (r, g, b: u8) -> RGB {
 	return RGB{r, g, b}
 }
 
@@ -172,7 +172,7 @@ SubImage :: struct {
 	size:  Size,
 }
 
-sub_image :: proc(i: Image, p: Point, s: Size) -> SubImage {
+sub_image :: proc "contextless" (i: Image, p: Point, s: Size) -> SubImage {
 	return SubImage{i, p, s}
 }
 
@@ -204,19 +204,19 @@ set_color :: proc "contextless" (c: Color, v: RGB) {
 }
 
 // Set all colors in the color palette.
-set_palette :: proc(colors: [16]RGB) {
+set_palette :: proc "contextless" (colors: [16]RGB) {
 	for i in 1 ..= 16 {
 		set_color(cast(Color)i, colors[i - 1])
 	}
 }
 
 // Draw a single point (1 pixel if scaling is 1).
-draw_point :: proc(p: Point, c: Color) {
+draw_point :: proc "contextless" (p: Point, c: Color) {
 	b_draw_point(cast(i32)p.x, cast(i32)p.y, cast(i32)c)
 }
 
 // Draw a straight line from point a to point b.
-draw_line :: proc(a, b: Point, s: LineStyle) {
+draw_line :: proc "contextless" (a, b: Point, s: LineStyle) {
 	b_draw_line(
 		cast(i32)a.x,
 		cast(i32)a.y,
@@ -229,7 +229,7 @@ draw_line :: proc(a, b: Point, s: LineStyle) {
 
 
 // Draw a rectangle filling the given bounding box.
-draw_rect :: proc(p: Point, b: Size, s: Style) {
+draw_rect :: proc "contextless" (p: Point, b: Size, s: Style) {
 	b_draw_rect(
 		cast(i32)p.x,
 		cast(i32)p.y,
@@ -243,7 +243,7 @@ draw_rect :: proc(p: Point, b: Size, s: Style) {
 
 
 // Draw a rectangle with rounded corners.
-draw_rounded_rect :: proc(p: Point, b, c: Size, s: Style) {
+draw_rounded_rect :: proc "contextless" (p: Point, b, c: Size, s: Style) {
 	b_draw_rounded_rect(
 		cast(i32)p.x,
 		cast(i32)p.y,
@@ -258,7 +258,7 @@ draw_rounded_rect :: proc(p: Point, b, c: Size, s: Style) {
 }
 
 // Draw a circle with the given diameter.
-draw_circle :: proc(p: Point, d: int, s: Style) {
+draw_circle :: proc "contextless" (p: Point, d: int, s: Style) {
 	b_draw_circle(
 		cast(i32)p.x,
 		cast(i32)p.y,
@@ -270,7 +270,7 @@ draw_circle :: proc(p: Point, d: int, s: Style) {
 }
 
 // Draw an ellipse (oval).
-draw_ellipse :: proc(p: Point, b: Size, s: Style) {
+draw_ellipse :: proc "contextless" (p: Point, b: Size, s: Style) {
 	b_draw_ellipse(
 		cast(i32)p.x,
 		cast(i32)p.y,
@@ -298,7 +298,7 @@ draw_triangle :: proc "contextless" (a, b, c: Point, s: Style) {
 }
 
 // Draw an arc.
-draw_arc :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
+draw_arc :: proc "contextless" (p: Point, d: int, start, sweep: Angle, s: Style) {
 	b_draw_arc(
 		cast(i32)p.x,
 		cast(i32)p.y,
@@ -312,7 +312,7 @@ draw_arc :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
 }
 
 // Draw a sector.
-draw_sector :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
+draw_sector :: proc "contextless" (p: Point, d: int, start, sweep: Angle, s: Style) {
 	b_draw_sector(
 		cast(i32)p.x,
 		cast(i32)p.y,
@@ -329,7 +329,7 @@ draw_sector :: proc(p: Point, d: int, start, sweep: Angle, s: Style) {
 //
 // Unlike in the other drawing functions, here [Point] points not to the top-left corner
 // but to the baseline start position.
-draw_text :: proc(t: string, f: Font, p: Point, c: Color) {
+draw_text :: proc "contextless" (t: string, f: Font, p: Point, c: Color) {
 	text_ptr := cast(uintptr)raw_data(t)
 	raw_ptr := cast(uintptr)raw_data(f._raw)
 	b_draw_text(
@@ -344,13 +344,13 @@ draw_text :: proc(t: string, f: Font, p: Point, c: Color) {
 }
 
 // Render a QR code for the given text.
-draw_qr :: proc(t: string, p: Point, black, white: Color) {
+draw_qr :: proc "contextless" (t: string, p: Point, black, white: Color) {
 	ptr := cast(uintptr)raw_data(t)
 	b_draw_qr(ptr, cast(u32)(len(t)), cast(i32)p.x, cast(i32)p.y, cast(i32)black, cast(i32)white)
 }
 
 // Render an image at the given point.
-draw_image :: proc(i: Image, p: Point) {
+draw_image :: proc "contextless" (i: Image, p: Point) {
 	raw_ptr := cast(uintptr)raw_data(i._raw)
 	b_draw_image(raw_ptr, cast(u32)(len(i._raw)), cast(i32)p.x, cast(i32)p.y)
 }
@@ -358,7 +358,7 @@ draw_image :: proc(i: Image, p: Point) {
 // Draw a subregion of an image.
 //
 // Most often used to draw a sprite from a sprite atlas.
-draw_sub_image :: proc(i: SubImage, p: Point) {
+draw_sub_image :: proc "contextless" (i: SubImage, p: Point) {
 	rawPtr := cast(uintptr)raw_data(i.image._raw)
 	b_draw_sub_image(
 		rawPtr,
@@ -373,7 +373,7 @@ draw_sub_image :: proc(i: SubImage, p: Point) {
 }
 
 // Set the target image for all subsequent drawing operations.
-set_canvas :: proc(c: Canvas) {
+set_canvas :: proc "contextless" (c: Canvas) {
 	rawPtr := cast(uintptr)raw_data(c._raw)
 	b_set_canvas(rawPtr, cast(u32)(len(c._raw)))
 }
@@ -381,7 +381,7 @@ set_canvas :: proc(c: Canvas) {
 // Make all subsequent drawing operations target the screen instead of a canvas.
 //
 // Cancels the effect of [SetCanvas].
-unset_canvas :: proc() {
+unset_canvas :: proc "contextless" () {
 	b_unset_canvas()
 }
 
@@ -435,7 +435,7 @@ DPad4 :: enum u8 {
 	Down,
 }
 
-dpad4 :: proc(p: Pad) -> DPad4 {
+dpad4 :: proc "contextless" (p: Pad) -> DPad4 {
 	x := p.x
 	y := p.y
 	abs_x := abs(x)
@@ -471,7 +471,7 @@ DPad8 :: struct {
 	down:  bool,
 }
 
-dpad8 :: proc(p: Pad) -> DPad8 {
+dpad8 :: proc "contextless" (p: Pad) -> DPad8 {
 	return DPad8 {
 		left = p.x <= -DPAD8_THRESHOLD,
 		right = p.x >= DPAD8_THRESHOLD,
@@ -510,7 +510,7 @@ Buttons :: struct {
 // Get the current touch pad state.
 //
 // The peer can be [COMBINED] or one of the [get_peers].
-read_pad :: proc(p: Peer) -> (Pad, bool) {
+read_pad :: proc "contextless" (p: Peer) -> (Pad, bool) {
 	raw := b_read_pad(cast(u32)(p._raw))
 	pressed := raw != 0xffff
 	if !pressed {
@@ -524,7 +524,7 @@ read_pad :: proc(p: Peer) -> (Pad, bool) {
 // Get the currently pressed buttons.
 //
 // The peer can be [COMBINED] or one of the [get_peers].
-read_buttons :: proc(p: Peer) -> Buttons {
+read_buttons :: proc "contextless" (p: Peer) -> Buttons {
 	raw := b_read_buttons(cast(u32)p._raw)
 	return Buttons {
 		s = has_bit_set(raw, 0),
@@ -537,7 +537,7 @@ read_buttons :: proc(p: Peer) -> Buttons {
 
 // Check if the given u32 value has the given bit set.
 @(private)
-has_bit_set :: proc(val: u32, bit: uint) -> bool {
+has_bit_set :: proc "contextless" (val: u32, bit: uint) -> bool {
 	return (val >> bit) & 0b1 != 0
 }
 
@@ -578,7 +578,7 @@ Me :: struct {
 }
 
 // Check if the given [Peer] represents the current device.
-is_me :: proc(me: Me, p: Peer) -> bool {
+is_me :: proc "contextless" (me: Me, p: Peer) -> bool {
 	return me._raw == p._raw
 }
 
@@ -599,7 +599,7 @@ Peers :: []Peer
 Stash :: []byte
 
 // Get the peer corresponding to the local device.
-get_me :: proc() -> Me {
+get_me :: proc "contextless" () -> Me {
 	return Me{cast(u8)(b_get_me())}
 }
 
@@ -628,7 +628,7 @@ get_peers :: proc() -> Peers {
 // On exit, the runtime will persist the stash in FS.
 // Next time the app starts, calling [load_stash] will restore the stash
 // saved earlier.
-save_stash :: proc(p: Peer, b: Stash) {
+save_stash :: proc "contextless" (p: Peer, b: Stash) {
 	ptr := cast(uintptr)raw_data(b)
 	b_save_stash(cast(u32)(p._raw), ptr, cast(u32)(len(b)))
 }
@@ -674,7 +674,7 @@ Progress :: struct {
 }
 
 // Get the progress of earning the badge.
-get_progress :: proc(p: Peer, b: Badge) -> Progress {
+get_progress :: proc "contextless" (p: Peer, b: Badge) -> Progress {
 	return add_progress(p, b, 0)
 }
 
@@ -685,13 +685,13 @@ get_progress :: proc(p: Peer, b: Badge) -> Progress {
 //
 // If the Peer is [COMBINED], the progress is added to every peer
 // and the returned value is the lowest progress.
-add_progress :: proc(p: Peer, b: Badge, v: i16) -> Progress {
+add_progress :: proc "contextless" (p: Peer, b: Badge, v: i16) -> Progress {
 	r := b_add_progress(cast(u32)(p._raw), cast(u32)b, cast(i32)v)
 	return Progress{done = cast(u16)(r >> 16), goal = cast(u16)r}
 }
 
 // Get the personal best of the player.
-get_score :: proc(p: Peer, b: Board) -> i16 {
+get_score :: proc "contextless" (p: Peer, b: Board) -> i16 {
 	return add_score(p, b, 0)
 }
 
@@ -702,7 +702,7 @@ get_score :: proc(p: Peer, b: Board) -> i16 {
 //
 // If the Peer is [COMBINED], the score is added for every peer
 // and the returned value is the lowest of their best scores.
-add_score :: proc(p: Peer, b: Board, v: i16) -> i16 {
+add_score :: proc "contextless" (p: Peer, b: Board, v: i16) -> i16 {
 	s := b_add_score(cast(u32)(p._raw), cast(u32)b, cast(i32)v)
 	return cast(i16)s
 }
@@ -726,11 +726,11 @@ File :: struct {
 	_raw: []byte,
 }
 
-image :: proc(f: File) -> Image {
+image :: proc "contextless" (f: File) -> Image {
 	return Image{f._raw}
 }
 
-font :: proc(f: File) -> Font {
+font :: proc "contextless" (f: File) -> Font {
 	return Font{f._raw}
 }
 
@@ -767,7 +767,7 @@ load_alloc_file :: proc(path: string) -> File {
 
 // Load the file into the given buffer.
 @(private)
-load_file_into :: proc(path: string, buf: []byte) -> File {
+load_file_into :: proc "contextless" (path: string, buf: []byte) -> File {
 	pathPtr := cast(uintptr)raw_data(path)
 	bufPtr := cast(uintptr)raw_data(buf)
 	fileSize := b_load_file(pathPtr, cast(u32)(len(path)), bufPtr, cast(u32)(len(buf)))
@@ -778,26 +778,26 @@ load_file_into :: proc(path: string, buf: []byte) -> File {
 }
 
 // Check if the given file exists.
-file_exists :: proc(path: string) -> bool {
+file_exists :: proc "contextless" (path: string) -> bool {
 	return get_file_size(path) != 0
 }
 
 // Get size (in bytes) of the given file.
-get_file_size :: proc(path: string) -> int {
+get_file_size :: proc "contextless" (path: string) -> int {
 	pathPtr := cast(uintptr)raw_data(path)
 	size := b_get_file_size(pathPtr, cast(u32)(len(path)))
 	return int(size)
 }
 
 // Write a file into the app data dir.
-dump_file :: proc(path: string, raw: []byte) {
+dump_file :: proc "contextless" (path: string, raw: []byte) {
 	pathPtr := cast(uintptr)raw_data(path)
 	rawPtr := cast(uintptr)raw_data(raw)
 	b_dump_file(pathPtr, cast(u32)(len(path)), rawPtr, cast(u32)(len(raw)))
 }
 
 // Remove a file from the app data dir.
-remove_file :: proc(path: string) {
+remove_file :: proc "contextless" (path: string) {
 	pathPtr := cast(uintptr)raw_data(path)
 	b_remove_file(pathPtr, cast(u32)(len(path)))
 }
@@ -870,24 +870,24 @@ Settings :: struct {
 }
 
 // Log a debug message.
-log_debug :: proc(t: string) {
+log_debug :: proc "contextless" (t: string) {
 	ptr := cast(uintptr)raw_data(t)
 	b_log_debug(ptr, cast(u32)(len(t)))
 }
 
 // Log an error message.
-log_error :: proc(t: string) {
+log_error :: proc "contextless" (t: string) {
 	ptr := cast(uintptr)raw_data(t)
 	b_log_error(ptr, cast(u32)(len(t)))
 }
 
 // Set the seed used to generate random values.
-set_seed :: proc(seed: u32) {
+set_seed :: proc "contextless" (seed: u32) {
 	b_set_seed(seed)
 }
 
 // Get a random value.
-get_random :: proc() -> u32 {
+get_random :: proc "contextless" () -> u32 {
 	return b_get_random()
 }
 
@@ -911,7 +911,7 @@ AnyPeer :: union {
 // See [the docs] for more info.
 //
 // [the docs]: https://docs.fireflyzero.com/dev/net/
-get_settings :: proc(p: AnyPeer) -> Settings {
+get_settings :: proc "contextless" (p: AnyPeer) -> Settings {
 	peer_id: u8 = 0
 	switch peer in p {
 	case Peer:
@@ -942,17 +942,17 @@ get_settings :: proc(p: AnyPeer) -> Settings {
 }
 
 @(private)
-parse_color :: proc(c: u64) -> Color {
+parse_color :: proc "contextless" (c: u64) -> Color {
 	return cast(Color)(c & 0xf + 1)
 }
 
 // Exit the app after the current update is finished.
-quit :: proc() {
+quit :: proc "contextless" () {
 	b_quit()
 }
 
 // Restart the app.
-restart :: proc() {
+restart :: proc "contextless" () {
 	b_restart()
 }
 
@@ -973,102 +973,102 @@ foreign import "misc"
 @(default_calling_convention = "contextless")
 foreign graphics {
 	@(link_name = "clear_screen")
-	b_clear_screen :: proc(c: i32) ---
+	b_clear_screen :: proc "contextless" (c: i32) ---
 	@(link_name = "set_color")
-	b_set_color :: proc(c, r, g, b: i32) ---
+	b_set_color :: proc "contextless" (c, r, g, b: i32) ---
 	@(link_name = "draw_point")
-	b_draw_point :: proc(x, y, c: i32) ---
+	b_draw_point :: proc "contextless" (x, y, c: i32) ---
 	@(link_name = "draw_line")
-	b_draw_line :: proc(x1, y1, x2, y2, c, sw: i32) ---
+	b_draw_line :: proc "contextless" (x1, y1, x2, y2, c, sw: i32) ---
 	@(link_name = "draw_rect")
-	b_draw_rect :: proc(x, y, w, h, fc, sc, sw: i32) ---
+	b_draw_rect :: proc "contextless" (x, y, w, h, fc, sc, sw: i32) ---
 	@(link_name = "draw_rounded_rect")
-	b_draw_rounded_rect :: proc(x, y, w, h, cw, ch, fc, sc, sw: i32) ---
+	b_draw_rounded_rect :: proc "contextless" (x, y, w, h, cw, ch, fc, sc, sw: i32) ---
 	@(link_name = "draw_circle")
-	b_draw_circle :: proc(x, y, d, fc, sc, sw: i32) ---
+	b_draw_circle :: proc "contextless" (x, y, d, fc, sc, sw: i32) ---
 	@(link_name = "draw_ellipse")
-	b_draw_ellipse :: proc(x, y, w, h, fc, sc, sw: i32) ---
+	b_draw_ellipse :: proc "contextless" (x, y, w, h, fc, sc, sw: i32) ---
 	@(link_name = "draw_triangle")
-	b_draw_triangle :: proc(x1, y1, x2, y2, x3, y3, fc, sc, sw: i32) ---
+	b_draw_triangle :: proc "contextless" (x1, y1, x2, y2, x3, y3, fc, sc, sw: i32) ---
 	@(link_name = "draw_arc")
-	b_draw_arc :: proc(x, y, d: i32, ast, asw: f32, fc, sc, sw: i32) ---
+	b_draw_arc :: proc "contextless" (x, y, d: i32, ast, asw: f32, fc, sc, sw: i32) ---
 	@(link_name = "draw_sector")
-	b_draw_sector :: proc(x, y, d: i32, ast, asw: f32, fc, sc, sw: i32) ---
+	b_draw_sector :: proc "contextless" (x, y, d: i32, ast, asw: f32, fc, sc, sw: i32) ---
 	@(link_name = "draw_text")
-	b_draw_text :: proc(textPtr: uintptr, textLen: u32, fontPtr: uintptr, fontLen: u32, x, y, color: i32) ---
+	b_draw_text :: proc "contextless" (textPtr: uintptr, textLen: u32, fontPtr: uintptr, fontLen: u32, x, y, color: i32) ---
 	@(link_name = "draw_qr")
-	b_draw_qr :: proc(textPtr: uintptr, textLen: u32, x, y, black, white: i32) ---
+	b_draw_qr :: proc "contextless" (textPtr: uintptr, textLen: u32, x, y, black, white: i32) ---
 	@(link_name = "draw_image")
-	b_draw_image :: proc(ptr: uintptr, size: u32, x, y: i32) ---
+	b_draw_image :: proc "contextless" (ptr: uintptr, size: u32, x, y: i32) ---
 	@(link_name = "draw_sub_image")
-	b_draw_sub_image :: proc(ptr: uintptr, size: u32, x, y, subX, subY: i32, subWidth, subHeight: u32) ---
+	b_draw_sub_image :: proc "contextless" (ptr: uintptr, size: u32, x, y, subX, subY: i32, subWidth, subHeight: u32) ---
 	@(link_name = "set_canvas")
-	b_set_canvas :: proc(ptr: uintptr, size: u32) ---
+	b_set_canvas :: proc "contextless" (ptr: uintptr, size: u32) ---
 	@(link_name = "unset_canvas")
-	b_unset_canvas :: proc() ---
+	b_unset_canvas :: proc "contextless" () ---
 }
 
 @(private)
 @(default_calling_convention = "contextless")
 foreign input {
 	@(link_name = "read_pad")
-	b_read_pad :: proc(player: u32) -> i32 ---
+	b_read_pad :: proc "contextless" (player: u32) -> i32 ---
 	@(link_name = "read_buttons")
-	b_read_buttons :: proc(player: u32) -> u32 ---
+	b_read_buttons :: proc "contextless" (player: u32) -> u32 ---
 }
 
 @(private)
 @(default_calling_convention = "contextless")
 foreign fs {
 	@(link_name = "get_file_size")
-	b_get_file_size :: proc(pathPtr: uintptr, pathLen: u32) -> u32 ---
+	b_get_file_size :: proc "contextless" (pathPtr: uintptr, pathLen: u32) -> u32 ---
 	@(link_name = "load_file")
-	b_load_file :: proc(pathPtr: uintptr, pathLen: u32, bufPtr: uintptr, bufLen: u32) -> u32 ---
+	b_load_file :: proc "contextless" (pathPtr: uintptr, pathLen: u32, bufPtr: uintptr, bufLen: u32) -> u32 ---
 	@(link_name = "dump_file")
-	b_dump_file :: proc(pathPtr: uintptr, pathLen: u32, bufPtr: uintptr, bufLen: u32) -> u32 ---
+	b_dump_file :: proc "contextless" (pathPtr: uintptr, pathLen: u32, bufPtr: uintptr, bufLen: u32) -> u32 ---
 	@(link_name = "remove_file")
-	b_remove_file :: proc(pathPtr: uintptr, pathLen: u32) ---
+	b_remove_file :: proc "contextless" (pathPtr: uintptr, pathLen: u32) ---
 }
 
 @(private)
 @(default_calling_convention = "contextless")
 foreign net {
 	@(link_name = "get_me")
-	b_get_me :: proc() -> u32 ---
+	b_get_me :: proc "contextless" () -> u32 ---
 	@(link_name = "get_peers")
-	b_get_peers :: proc() -> u32 ---
+	b_get_peers :: proc "contextless" () -> u32 ---
 	@(link_name = "save_stash")
-	b_save_stash :: proc(peerID: u32, bufPtr: uintptr, bufLen: u32) ---
+	b_save_stash :: proc "contextless" (peerID: u32, bufPtr: uintptr, bufLen: u32) ---
 	@(link_name = "load_stash")
-	b_load_stash :: proc(peerID: u32, bufPtr: uintptr, bufLen: u32) -> u32 ---
+	b_load_stash :: proc "contextless" (peerID: u32, bufPtr: uintptr, bufLen: u32) -> u32 ---
 }
 
 @(private)
 @(default_calling_convention = "contextless")
 foreign stats {
 	@(link_name = "add_progress")
-	b_add_progress :: proc(peerID, badgeID: u32, val: i32) -> u32 ---
+	b_add_progress :: proc "contextless" (peerID, badgeID: u32, val: i32) -> u32 ---
 	@(link_name = "add_score")
-	b_add_score :: proc(peerID, boardID: u32, val: i32) -> i32 ---
+	b_add_score :: proc "contextless" (peerID, boardID: u32, val: i32) -> i32 ---
 }
 
 @(private)
 @(default_calling_convention = "contextless")
 foreign misc {
 	@(link_name = "log_debug")
-	b_log_debug :: proc(ptr: uintptr, size: u32) ---
+	b_log_debug :: proc "contextless" (ptr: uintptr, size: u32) ---
 	@(link_name = "log_error")
-	b_log_error :: proc(ptr: uintptr, size: u32) ---
+	b_log_error :: proc "contextless" (ptr: uintptr, size: u32) ---
 	@(link_name = "set_seed")
-	b_set_seed :: proc(seed: u32) ---
+	b_set_seed :: proc "contextless" (seed: u32) ---
 	@(link_name = "get_random")
-	b_get_random :: proc() -> u32 ---
+	b_get_random :: proc "contextless" () -> u32 ---
 	@(link_name = "get_name")
-	b_get_name :: proc(index: u32, ptr: uintptr) -> u32 ---
+	b_get_name :: proc "contextless" (index: u32, ptr: uintptr) -> u32 ---
 	@(link_name = "get_settings")
-	b_get_settings :: proc(index: u32) -> u64 ---
+	b_get_settings :: proc "contextless" (index: u32) -> u64 ---
 	@(link_name = "restart")
-	b_restart :: proc() ---
+	b_restart :: proc "contextless" () ---
 	@(link_name = "quit")
-	b_quit :: proc() ---
+	b_quit :: proc "contextless" () ---
 }
