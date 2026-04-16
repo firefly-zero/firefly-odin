@@ -182,7 +182,9 @@ Canvas :: struct {
 }
 
 // Create a new [Canvas].
-canvas :: proc(s: Size) -> Canvas {
+//
+// The Canvas is allocated on heap.
+canvas_buf :: proc(s: Size) -> Canvas {
 	headerSize := 4
 	bodySize := s.w * s.h / 2
 	raw := make([]byte, headerSize + bodySize)
@@ -609,9 +611,9 @@ get_me :: proc "contextless" () -> Me {
 //
 // It can be used to detect if multiplayer is active:
 // if there is more than 1 peer, you're playing with friends.
-get_peers :: proc() -> Peers {
+get_peers :: proc "contextless" () -> Peers {
 	peers := b_get_peers()
-	res := make([dynamic]Peer, 0, 32)
+	res: [dynamic; 32]Peer
 	for peerID in 0 ..< cast(u8)32 {
 		peer := Peer{peerID}
 		if peers >> peer._raw & 1 != 0 {
@@ -638,14 +640,7 @@ save_stash :: proc "contextless" (p: Peer, b: Stash) {
 // The buffer should be big enough to fit the stash.
 // If it's not, the stash will be truncated.
 // If there is no stash or it's empty, nil is returned.
-//
-// If the given buffer is nil, a new buffer will be allocated
-// big enough to fit the biggest allowed stash. At the moment, it is 80 bytes.
-load_stash :: proc(p: Peer, buf: []byte) -> Stash {
-	buf := buf
-	if buf == nil {
-		buf = make([]byte, 80)
-	}
+load_stash :: proc "contextless" (p: Peer, buf: []byte) -> Stash {
 	ptr := cast(uintptr)raw_data(buf)
 	size := b_load_stash(cast(u32)(p._raw), ptr, cast(u32)(len(buf)))
 	if size == 0 {
@@ -734,7 +729,9 @@ font :: proc "contextless" (f: File) -> Font {
 	return Font{f._raw}
 }
 
-// Read a file.
+// Load the file into the given buffer.
+//
+// Non-allocating version of [load_file_buf].
 //
 // It will first lookup file in the app's ROM directory and then check
 // the app writable data directory.
@@ -743,17 +740,25 @@ font :: proc "contextless" (f: File) -> Font {
 //
 // The second argument is the buffer in which the file should be loaded.
 // If the buffer is smaller than the file content, it gets cut.
-// If the buffer is nil, a new buffer of sufficient size will be allocated.
-load_file :: proc(path: string, buf: []byte) -> File {
-	if buf == nil {
-		return load_alloc_file(path)
+load_file :: proc "contextless" (path: string, buf: []byte) -> File {
+	pathPtr := cast(uintptr)raw_data(path)
+	bufPtr := cast(uintptr)raw_data(buf)
+	fileSize := b_load_file(pathPtr, cast(u32)(len(path)), bufPtr, cast(u32)(len(buf)))
+	if fileSize == 0 {
+		return File{nil}
 	}
-	return load_file_into(path, buf)
+	return File{buf[:fileSize]}
 }
 
 // Allocate a new buffer and load the file into it.
-@(private)
-load_alloc_file :: proc(path: string) -> File {
+//
+// Allocating version of [load_file].
+//
+// It will first lookup file in the app's ROM directory and then check
+// the app writable data directory.
+//
+// If the file does not exist, the Raw value of the returned File will be nil.
+load_file_buf :: proc(path: string) -> File {
 	pathPtr := cast(uintptr)raw_data(path)
 	fileSize := b_get_file_size(pathPtr, cast(u32)(len(path)))
 	if fileSize == 0 {
@@ -763,18 +768,6 @@ load_alloc_file :: proc(path: string) -> File {
 	bufPtr := cast(uintptr)raw_data(buf)
 	b_load_file(pathPtr, cast(u32)(len(path)), bufPtr, cast(u32)(len(buf)))
 	return File{buf}
-}
-
-// Load the file into the given buffer.
-@(private)
-load_file_into :: proc "contextless" (path: string, buf: []byte) -> File {
-	pathPtr := cast(uintptr)raw_data(path)
-	bufPtr := cast(uintptr)raw_data(buf)
-	fileSize := b_load_file(pathPtr, cast(u32)(len(path)), bufPtr, cast(u32)(len(buf)))
-	if fileSize == 0 {
-		return File{nil}
-	}
-	return File{buf[:fileSize]}
 }
 
 // Check if the given file exists.
@@ -892,7 +885,18 @@ get_random :: proc "contextless" () -> u32 {
 }
 
 // Get human-readable name of the given peer.
-get_name :: proc(p: Peer) -> string {
+//
+// Non-allocating version of [get_name_buf].
+get_name :: proc "contextless" (p: Peer, buf: string) -> string {
+	ptr := cast(uintptr)raw_data(buf)
+	length := b_get_name(u32(p._raw), ptr)
+	return buf[:length]
+}
+
+// Get human-readable name of the given peer.
+//
+// Allocating version of [get_name].
+get_name_buf :: proc(p: Peer) -> string {
 	buf := [16]byte{}
 	ptr := cast(uintptr)raw_data(&buf)
 	length := b_get_name(u32(p._raw), ptr)
