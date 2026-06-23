@@ -477,6 +477,9 @@ SawtoothModulator :: struct {
 }
 
 
+// Modulate the main parameter of the Node using the given Modulator.
+//
+// Only some nodes can be modulated.
 modulate :: proc {
 	mod_sine,
 	mod_square,
@@ -491,11 +494,13 @@ modulate :: proc {
 	mod_clip,
 }
 
+// Modulate oscillation frequency of a Sine node.
 @(private)
 mod_sine :: proc "contextless" (node: Sine, param: u32, low: Freq, high: Freq, mod: Modulator) {
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
+// Modulate oscillation frequency of a Square node.
 @(private)
 mod_square :: proc "contextless" (
 	node: Square,
@@ -507,6 +512,7 @@ mod_square :: proc "contextless" (
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
+// Modulate oscillation frequency of a Sawtooth node.
 @(private)
 mod_sawtooth :: proc "contextless" (
 	node: Sawtooth,
@@ -518,6 +524,7 @@ mod_sawtooth :: proc "contextless" (
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
+// Modulate oscillation frequency of a Triangle node.
 @(private)
 mod_triangle :: proc "contextless" (
 	node: Triangle,
@@ -529,26 +536,35 @@ mod_triangle :: proc "contextless" (
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
+// Modulate the gain level of a Gain node.
 @(private)
 mod_gain :: proc "contextless" (node: Gain, param: u32, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
+// Modulate the pan value (from 0. to 1.: 0. is only left, 1. is only right) of a Pan node.
 @(private)
 mod_pan :: proc "contextless" (node: Pan, param: u32, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
+// Modulate the muted state of a Mute node.
+//
+// Below 0.5 is muted, above is unmuted.
 @(private)
 mod_mute :: proc "contextless" (node: Mute, param: u32, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
+// Modulate the paused state of a Pause node.
+//
+// Below 0.5 is paused, above is playing.
 @(private)
 mod_pause :: proc "contextless" (node: Pause, param: u32, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
+// Modulate the cut-off frequency of a LowPass node.
 @(private)
 mod_low_pass :: proc "contextless" (
 	node: LowPass,
@@ -560,6 +576,7 @@ mod_low_pass :: proc "contextless" (
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
+// Modulate the cut-off frequency of a HighPass node.
 @(private)
 mod_high_pass :: proc "contextless" (
 	node: HighPass,
@@ -571,6 +588,7 @@ mod_high_pass :: proc "contextless" (
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
+// Modulate the low cut amplitude (of a Clip node) and adjust the high amplitude to keep the gap.
 @(private)
 mod_clip :: proc "contextless" (node: Clip, param: u32, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
