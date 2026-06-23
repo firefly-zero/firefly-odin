@@ -39,6 +39,7 @@ Point :: struct {
 }
 
 // Shortcut for creating a [Point].
+@(require_results)
 p :: proc "contextless" (x, y: int) -> Point {
 	return Point{x, y}
 }
@@ -54,6 +55,7 @@ Size :: struct {
 }
 
 // Shortcut for creating a [Size].
+@(require_results)
 s :: proc "contextless" (w, h: int) -> Size {
 	return Size{w, h}
 }
@@ -68,11 +70,13 @@ Angle :: struct {
 }
 
 // Define an angle in radians where Tau (doubled Pi) is the full circle.
+@(require_results)
 radians :: proc "contextless" (a: f32) -> Angle {
 	return Angle{a}
 }
 
 // Define an angle in radians where 360.0 is the full circle.
+@(require_results)
 degrees :: proc "contextless" (a: f32) -> Angle {
 	return Angle{a * math.PI / 180.0}
 }
@@ -125,6 +129,7 @@ RGB :: struct {
 }
 
 // Construct a new [RGB].
+@(require_results)
 rgb :: proc "contextless" (r, g, b: u8) -> RGB {
 	return RGB{r, g, b}
 }
@@ -144,11 +149,13 @@ Style :: struct {
 }
 
 // Make [Style] for a solid shape (without stroke).
+@(require_results)
 solid :: proc "contextless" (c: Color) -> Style {
 	return Style{c, Color.None, 0}
 }
 
 // Make [Style] for an outlined shape (without fill).
+@(require_results)
 outlined :: proc "contextless" (c: Color, w: int) -> Style {
 	return Style{Color.None, c, w}
 }
@@ -178,6 +185,7 @@ SubImage :: struct {
 	size:  Size,
 }
 
+@(require_results)
 sub_image :: proc "contextless" (i: Image, p: Point, s: Size) -> SubImage {
 	return SubImage{i, p, s}
 }
@@ -190,6 +198,7 @@ Canvas :: struct {
 // Create a new [Canvas].
 //
 // The Canvas is allocated on heap.
+@(require_results)
 canvas_buf :: proc(s: Size) -> Canvas {
 	headerSize := 4
 	bodySize := s.w * s.h / 2
@@ -443,6 +452,7 @@ DPad4 :: enum u8 {
 	Down,
 }
 
+@(require_results)
 dpad4 :: proc "contextless" (p: Pad) -> DPad4 {
 	x := p.x
 	y := p.y
@@ -479,6 +489,7 @@ DPad8 :: struct {
 	down:  bool,
 }
 
+@(require_results)
 dpad8 :: proc "contextless" (p: Pad) -> DPad8 {
 	return DPad8 {
 		left = p.x <= -DPAD8_THRESHOLD,
@@ -532,6 +543,7 @@ read_pad :: proc "contextless" (p: Peer) -> (Pad, bool) {
 // Get the currently pressed buttons.
 //
 // The peer can be [COMBINED] or one of the [get_peers].
+@(require_results)
 read_buttons :: proc "contextless" (p: Peer) -> Buttons {
 	raw := b_read_buttons(cast(u32)p._raw)
 	return Buttons {
@@ -586,6 +598,7 @@ Me :: struct {
 }
 
 // Check if the given [Peer] represents the current device.
+@(require_results)
 is_me :: proc "contextless" (me: Me, p: Peer) -> bool {
 	return me._raw == p._raw
 }
@@ -607,6 +620,7 @@ Peers :: []Peer
 Stash :: []byte
 
 // Get the peer corresponding to the local device.
+@(require_results)
 get_me :: proc "contextless" () -> Me {
 	return Me{cast(u8)(b_get_me())}
 }
@@ -617,6 +631,7 @@ get_me :: proc "contextless" () -> Me {
 //
 // It can be used to detect if multiplayer is active:
 // if there is more than 1 peer, you're playing with friends.
+@(require_results)
 get_peers :: proc "contextless" () -> Peers {
 	peers := b_get_peers()
 	res: [dynamic; 32]Peer
@@ -675,6 +690,7 @@ Progress :: struct {
 }
 
 // Get the progress of earning the badge.
+@(require_results)
 get_progress :: proc "contextless" (p: Peer, b: Badge) -> Progress {
 	return add_progress(p, b, 0)
 }
@@ -692,6 +708,7 @@ add_progress :: proc "contextless" (p: Peer, b: Badge, v: i16) -> Progress {
 }
 
 // Get the personal best of the player.
+@(require_results)
 get_score :: proc "contextless" (p: Peer, b: Board) -> i16 {
 	return add_score(p, b, 0)
 }
@@ -727,10 +744,12 @@ File :: struct {
 	_raw: []byte,
 }
 
+@(require_results)
 image :: proc "contextless" (f: File) -> Image {
 	return Image{f._raw}
 }
 
+@(require_results)
 font :: proc "contextless" (f: File) -> Font {
 	return Font{f._raw}
 }
@@ -764,6 +783,7 @@ load_file :: proc "contextless" (path: string, buf: []byte) -> File {
 // the app writable data directory.
 //
 // If the file does not exist, the Raw value of the returned File will be nil.
+@(require_results)
 load_file_buf :: proc(path: string) -> File {
 	pathPtr := cast(uintptr)raw_data(path)
 	fileSize := b_get_file_size(pathPtr, cast(u32)(len(path)))
@@ -777,11 +797,13 @@ load_file_buf :: proc(path: string) -> File {
 }
 
 // Check if the given file exists.
+@(require_results)
 file_exists :: proc "contextless" (path: string) -> bool {
 	return get_file_size(path) != 0
 }
 
 // Get size (in bytes) of the given file.
+@(require_results)
 get_file_size :: proc "contextless" (path: string) -> int {
 	pathPtr := cast(uintptr)raw_data(path)
 	size := b_get_file_size(pathPtr, cast(u32)(len(path)))
@@ -886,6 +908,7 @@ set_seed :: proc "contextless" (seed: u32) {
 }
 
 // Get a random value.
+@(require_results)
 get_random :: proc "contextless" () -> u32 {
 	return b_get_random()
 }
@@ -902,6 +925,7 @@ get_name :: proc "contextless" (p: Peer, buf: string) -> string {
 // Get human-readable name of the given peer.
 //
 // Allocating version of [get_name].
+@(require_results)
 get_name_buf :: proc(p: Peer) -> string {
 	buf := [16]byte{}
 	ptr := cast(uintptr)raw_data(&buf)
@@ -909,7 +933,7 @@ get_name_buf :: proc(p: Peer) -> string {
 	return strings.string_from_ptr(&buf[0], cast(int)length)
 }
 
-AnyPeer :: union {
+AnyPeer :: union #no_nil {
 	Peer,
 	Me,
 }
@@ -921,6 +945,7 @@ AnyPeer :: union {
 // See [the docs] for more info.
 //
 // [the docs]: https://docs.fireflyzero.com/dev/net/
+@(require_results)
 get_settings :: proc "contextless" (p: AnyPeer) -> Settings {
 	peer_id: u8 = 0
 	switch peer in p {
@@ -952,6 +977,7 @@ get_settings :: proc "contextless" (p: AnyPeer) -> Settings {
 }
 
 @(private)
+@(require_results)
 parse_color :: proc "contextless" (c: u64) -> Color {
 	return cast(Color)(c & 0xf + 1)
 }
