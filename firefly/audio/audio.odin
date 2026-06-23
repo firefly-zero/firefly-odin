@@ -9,94 +9,117 @@ Time :: struct {
 	s: u32,
 }
 
+// Audio node created by `add_sine`.
 Sine :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_square`.
 Square :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_sawtooth`.
 Sawtooth :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_triangle`.
 Triangle :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_noise`.
 Noise :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_empty`.
 Empty :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_zero`.
 Zero :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_file`.
 File :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_mix`.
 Mix :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_all_for_one`.
 AllForOne :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_gain`.
 Gain :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_loop`.
 Loop :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_concat`.
 Concat :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_pan`.
 Pan :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_mute`.
 Mute :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_pause`.
 Pause :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_track_position`.
 TrackPosition :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_low_pass`.
 LowPass :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_high_pass`.
 HighPass :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_take_left`.
 TakeLeft :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_take_right`.
 TakeRight :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_swap`.
 Swap :: struct {
 	id: u32,
 }
 
+// Audio node created by `add_clip`.
 Clip :: struct {
 	id: u32,
 }
@@ -196,141 +219,172 @@ get_node_id :: proc "contextless" (node: Node) -> u32 {
 	return 0
 }
 
-add_sine :: proc "contextless" (parent: ParentNode, freq: f32, phase: f32) -> Sine {
-	id := b_add_sine(get_node_id(parent), freq, phase)
+// Add sine wave oscillator source (`∿`).
+add_sine :: proc "contextless" (parent: ParentNode, freq: Freq, phase: f32) -> Sine {
+	id := b_add_sine(get_node_id(parent), freq.h, phase)
 	return Sine{id}
 }
 
-add_square :: proc "contextless" (parent: ParentNode, freq: f32, phase: f32) -> Square {
-	id := b_add_square(get_node_id(parent), freq, phase)
+// Add square wave oscillator source (`⎍`).
+add_square :: proc "contextless" (parent: ParentNode, freq: Freq, phase: f32) -> Square {
+	id := b_add_square(get_node_id(parent), freq.h, phase)
 	return Square{id}
 }
 
-add_sawtooth :: proc "contextless" (parent: ParentNode, freq: f32, phase: f32) -> Sawtooth {
-	id := b_add_sawtooth(get_node_id(parent), freq, phase)
+// Add sawtooth wave oscillator source (`╱│`).
+add_sawtooth :: proc "contextless" (parent: ParentNode, freq: Freq, phase: f32) -> Sawtooth {
+	id := b_add_sawtooth(get_node_id(parent), freq.h, phase)
 	return Sawtooth{id}
 }
 
-add_triangle :: proc "contextless" (parent: ParentNode, freq: f32, phase: f32) -> Triangle {
-	id := b_add_triangle(get_node_id(parent), freq, phase)
+// Add triangle wave oscillator source (`╱╲`).
+add_triangle :: proc "contextless" (parent: ParentNode, freq: Freq, phase: f32) -> Triangle {
+	id := b_add_triangle(get_node_id(parent), freq.h, phase)
 	return Triangle{id}
 }
 
+// Add white noise source (amplitude on each tick is random).
 add_noise :: proc "contextless" (parent: ParentNode, seed: i32) -> Noise {
 	id := b_add_noise(get_node_id(parent), seed)
 	return Noise{id}
 }
 
+// Add always stopped source.
 add_empty :: proc "contextless" (parent: ParentNode) -> Empty {
 	id := b_add_empty(get_node_id(parent))
 	return Empty{id}
 }
 
+// Add silent source producing zeros.
 add_zero :: proc "contextless" (parent: ParentNode) -> Zero {
 	id := b_add_zero(get_node_id(parent))
 	return Zero{id}
 }
 
-add_file :: proc "contextless" (par: ParentNode, ptr: u32, len: u32) -> File {
+// Play an audio file from ROM.
+add_file :: proc "contextless" (par: ParentNode, path: string) -> File {
+	ptr := cast(uintptr)raw_data(path)
+	len := cast(u32)(len(path))
 	id := b_add_file(get_node_id(par), ptr, len)
 	return File{id}
 }
 
+// Add node simply mixing all inputs.
 add_mix :: proc "contextless" (parent: ParentNode) -> Mix {
 	id := b_add_mix(get_node_id(parent))
 	return Mix{id}
 }
 
+// Add mixer node that stops if any of the sources stops.
 add_all_for_one :: proc "contextless" (parent: ParentNode) -> AllForOne {
 	id := b_add_all_for_one(get_node_id(parent))
 	return AllForOne{id}
 }
 
+// Add gain control node.
 add_gain :: proc "contextless" (parent: ParentNode, lvl: f32) -> Gain {
 	id := b_add_gain(get_node_id(parent), lvl)
 	return Gain{id}
 }
 
+// Add a loop node that resets the input if it stops.
 add_loop :: proc "contextless" (parent: ParentNode) -> Loop {
 	id := b_add_loop(get_node_id(parent))
 	return Loop{id}
 }
 
+// Add a node that plays the inputs one after the other, in the order as they added.
 add_concat :: proc "contextless" (parent: ParentNode) -> Concat {
 	id := b_add_concat(get_node_id(parent))
 	return Concat{id}
 }
 
+// Add node panning the audio to the left (0.), right (1.), or something in between.
 add_pan :: proc "contextless" (parent: ParentNode, lvl: f32) -> Pan {
 	id := b_add_pan(get_node_id(parent), lvl)
 	return Pan{id}
 }
 
+// Add node that can be muted using modulation.
 add_mute :: proc "contextless" (parent: ParentNode) -> Mute {
 	id := b_add_mute(get_node_id(parent))
 	return Mute{id}
 }
 
+// Add node that can be paused using modulation.
 add_pause :: proc "contextless" (parent: ParentNode) -> Pause {
 	id := b_add_pause(get_node_id(parent))
 	return Pause{id}
 }
 
+// Add node tracking the elapsed playback time.
 add_track_position :: proc "contextless" (parent: ParentNode) -> TrackPosition {
 	id := b_add_track_position(get_node_id(parent))
 	return TrackPosition{id}
 }
 
-add_low_pass :: proc "contextless" (parent: ParentNode, freq: f32, q: f32) -> LowPass {
-	id := b_add_low_pass(get_node_id(parent), freq, q)
+// Add lowpass filter node.
+add_low_pass :: proc "contextless" (parent: ParentNode, freq: Freq, q: f32) -> LowPass {
+	id := b_add_low_pass(get_node_id(parent), freq.h, q)
 	return LowPass{id}
 }
 
-add_high_pass :: proc "contextless" (parent: ParentNode, freq: f32, q: f32) -> HighPass {
-	id := b_add_high_pass(get_node_id(parent), freq, q)
+// Add highpass filter node.
+add_high_pass :: proc "contextless" (parent: ParentNode, freq: Freq, q: f32) -> HighPass {
+	id := b_add_high_pass(get_node_id(parent), freq.h, q)
 	return HighPass{id}
 }
 
+// Add node converting stereo to mono by taking the left channel.
 add_take_left :: proc "contextless" (parent: ParentNode) -> TakeLeft {
 	id := b_add_take_left(get_node_id(parent))
 	return TakeLeft{id}
 }
 
+// Add node converting stereo to mono by taking the right channel.
 add_take_right :: proc "contextless" (parent: ParentNode) -> TakeRight {
 	id := b_add_take_right(get_node_id(parent))
 	return TakeRight{id}
 }
 
+// Add node swapping left and right channels of the stereo input.
 add_swap :: proc "contextless" (parent: ParentNode) -> Swap {
 	id := b_add_swap(get_node_id(parent))
 	return Swap{id}
 }
 
+// Add node clamping the input amplitude. Can be used for hard distortion.
 add_clip :: proc "contextless" (parent: ParentNode, low: f32, high: f32) -> Clip {
 	id := b_add_clip(get_node_id(parent), low, high)
 	return Clip{id}
 }
 
 
+// Reset the node state to how it was when it was just added.
 reset :: proc "contextless" (node: Node) {
 	b_reset(get_node_id(node))
 }
 
+// Reset the node and all child nodes to the state to how it was when they were just added.
 reset_all :: proc "contextless" (node: ParentNode) {
 	b_reset_all(get_node_id(node))
 }
 
+// Remove all child nodes.
+//
+// After it is called, you should make sure to discard all references to the old
+// child nodes.
 clear :: proc "contextless" (node: ParentNode) {
 	b_clear(get_node_id(node))
 }
 
 
 // Modulator can be attached to a node to change a node parameter over time.
-///
+//
 // Modulators include both LFOs (Low-Frequency Oscillator) and envelopes.
 // The difference is that LFOs keep oscillating between values
 // while envelopes go from one value to another and then stop.
-///
+//
 // Internally, modulators only produce values from 0 to 1.
 // Then, to get the final value of the parameter,
 // the value from the modulator is projected on the range
@@ -338,7 +392,7 @@ clear :: proc "contextless" (node: ParentNode) {
 // with the modulator when attaching a modulator to a node.
 // For example, [`Node<Sine>::modulate`] accepts the range of modulated values
 // for the sine wave frequency (which can be used for vibrato effect).
-///
+//
 // Even if a node has multiple parameters that can be modulated,
 // currently  single node may have at most one modulator attached.
 Modulator :: union #no_nil {
@@ -351,12 +405,12 @@ Modulator :: union #no_nil {
 }
 
 // Linear (ramp up or down) envelope.
-///
+//
 // It looks like this: `⎽╱⎺` (or `⎺╲⎽` if `low` is bigger than `high`).
-///
+//
 // The value before `start_at` is 0, the value after `end_at` is 1,
 // and the value between `start_at` and `end_at` changes linearly from 0 to 1.
-///
+//
 // Most often used with [`Gain`] for fade in and fade out effect.
 LinearModulator :: struct {
 	start_at: Time,
@@ -364,9 +418,9 @@ LinearModulator :: struct {
 }
 
 // Hold envelope.
-///
+//
 // It looks like this: `⎽│⎺` (or `⎺│⎽` if `low` is bigger than `high`).
-///
+//
 // The value before `time` is 0 and the value after `time` is 1.
 // Equivalent to [`LinearModulator`] with `start_at` being equal to `end_at`.
 HoldModulator :: struct {
@@ -374,15 +428,15 @@ HoldModulator :: struct {
 }
 
 // ADSR envelope.
-///
+//
 // It looks like this: `🭋🭍🬹🬿`
-///
+//
 //  1. Until `attack`, the value goes from 0 to 1;
 //  2. Until `decay`, it goes from 1 to `sustain_level`;
 //  3. Until `sustain`, it holds `sustain_level`;
 //  4. Until `release`, it goes from `sustain_level` to 0;
 //  5. After `release`, it holds 0.
-///
+//
 // Most commonly used with [`Gain`].
 AdsrModulator :: struct {
 	// When the value reaches 1.
@@ -399,9 +453,9 @@ AdsrModulator :: struct {
 
 
 // Sine wave low-frequency oscillator.
-///
+//
 // It looks like this: `∿`.
-///
+//
 // Most commonly used with [`Sine`] (or another wave generator)
 // to produce vibrato effect.
 SineModulator :: struct {
@@ -409,14 +463,14 @@ SineModulator :: struct {
 }
 
 // Square wave low-frequency oscillator.
-///
+//
 // It looks like this: `🭿🭾🭿🭾🭿🭾🭿🭾`.
 SquareModulator :: struct {
 	period: Time,
 }
 
 // Sawtooth wave low-frequency oscillator.
-///
+//
 // It looks like this: `╱│╱│╱│╱│`.
 SawtoothModulator :: struct {
 	period: Time,
@@ -572,7 +626,7 @@ foreign audio {
 	@(link_name = "add_zero")
 	b_add_zero :: proc "contextless" (parent_id: u32) -> u32 ---
 	@(link_name = "add_file")
-	b_add_file :: proc "contextless" (parent: u32, ptr: u32, len: u32) -> u32 ---
+	b_add_file :: proc "contextless" (parent: u32, ptr: uintptr, len: u32) -> u32 ---
 
 	// nodes
 	@(link_name = "add_mix")
