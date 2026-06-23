@@ -1,6 +1,13 @@
 
 package audio
 
+Freq :: struct {
+	h: f32,
+}
+
+Time :: struct {
+	s: u32,
+}
 
 Sine :: struct {
 	id: u32,
@@ -94,7 +101,7 @@ Clip :: struct {
 	id: u32,
 }
 
-SourceNode :: union {
+SourceNode :: union #no_nil {
 	Sine,
 	Square,
 	Sawtooth,
@@ -104,7 +111,7 @@ SourceNode :: union {
 	Zero,
 }
 
-ParentNode :: union {
+ParentNode :: union #no_nil {
 	File,
 	Mix,
 	AllForOne,
@@ -123,13 +130,14 @@ ParentNode :: union {
 	Clip,
 }
 
-Node :: union {
+Node :: union #no_nil {
 	SourceNode,
 	ParentNode,
 }
 
 
 @(private)
+@(require_results)
 get_node_id :: proc "contextless" (node: Node) -> u32 {
 	switch node in node {
 	case SourceNode:
@@ -316,6 +324,233 @@ clear :: proc "contextless" (node: ParentNode) {
 	b_clear(get_node_id(node))
 }
 
+
+// Modulator can be attached to a node to change a node parameter over time.
+///
+// Modulators include both LFOs (Low-Frequency Oscillator) and envelopes.
+// The difference is that LFOs keep oscillating between values
+// while envelopes go from one value to another and then stop.
+///
+// Internally, modulators only produce values from 0 to 1.
+// Then, to get the final value of the parameter,
+// the value from the modulator is projected on the range
+// between `low` and `high` arguments passed together
+// with the modulator when attaching a modulator to a node.
+// For example, [`Node<Sine>::modulate`] accepts the range of modulated values
+// for the sine wave frequency (which can be used for vibrato effect).
+///
+// Even if a node has multiple parameters that can be modulated,
+// currently  single node may have at most one modulator attached.
+Modulator :: union #no_nil {
+	LinearModulator,
+	HoldModulator,
+	AdsrModulator,
+	SineModulator,
+	SquareModulator,
+	SawtoothModulator,
+}
+
+// Linear (ramp up or down) envelope.
+///
+// It looks like this: `⎽╱⎺` (or `⎺╲⎽` if `low` is bigger than `high`).
+///
+// The value before `start_at` is 0, the value after `end_at` is 1,
+// and the value between `start_at` and `end_at` changes linearly from 0 to 1.
+///
+// Most often used with [`Gain`] for fade in and fade out effect.
+LinearModulator :: struct {
+	start_at: Time,
+	end_at:   Time,
+}
+
+// Hold envelope.
+///
+// It looks like this: `⎽│⎺` (or `⎺│⎽` if `low` is bigger than `high`).
+///
+// The value before `time` is 0 and the value after `time` is 1.
+// Equivalent to [`LinearModulator`] with `start_at` being equal to `end_at`.
+HoldModulator :: struct {
+	time: Time,
+}
+
+// ADSR envelope.
+///
+// It looks like this: `🭋🭍🬹🬿`
+///
+//  1. Until `attack`, the value goes from 0 to 1;
+//  2. Until `decay`, it goes from 1 to `sustain_level`;
+//  3. Until `sustain`, it holds `sustain_level`;
+//  4. Until `release`, it goes from `sustain_level` to 0;
+//  5. After `release`, it holds 0.
+///
+// Most commonly used with [`Gain`].
+AdsrModulator :: struct {
+	// When the value reaches 1.
+	attack:        Time,
+	// When the value reaches `sustain_level`.
+	decay:         Time,
+	// Until when the value holds `sustain_level`.
+	sustain:       Time,
+	// The value generated from `decay` until `sustain`.
+	sustain_level: f32,
+	// When the value drops to 0.
+	release:       Time,
+}
+
+
+// Sine wave low-frequency oscillator.
+///
+// It looks like this: `∿`.
+///
+// Most commonly used with [`Sine`] (or another wave generator)
+// to produce vibrato effect.
+SineModulator :: struct {
+	freq: Freq,
+}
+
+// Square wave low-frequency oscillator.
+///
+// It looks like this: `🭿🭾🭿🭾🭿🭾🭿🭾`.
+SquareModulator :: struct {
+	period: Time,
+}
+
+// Sawtooth wave low-frequency oscillator.
+///
+// It looks like this: `╱│╱│╱│╱│`.
+SawtoothModulator :: struct {
+	period: Time,
+}
+
+
+modulate :: proc {
+	mod_sine,
+	mod_square,
+	mod_sawtooth,
+	mod_triangle,
+	mod_gain,
+	mod_pan,
+	mod_mute,
+	mod_pause,
+	mod_low_pass,
+	mod_high_pass,
+	mod_clip,
+}
+
+@(private)
+mod_sine :: proc "contextless" (node: Sine, param: u32, low: Freq, high: Freq, mod: Modulator) {
+	_modulate(node.id, 0, low.h, high.h, mod)
+}
+
+@(private)
+mod_square :: proc "contextless" (
+	node: Square,
+	param: u32,
+	low: Freq,
+	high: Freq,
+	mod: Modulator,
+) {
+	_modulate(node.id, 0, low.h, high.h, mod)
+}
+
+@(private)
+mod_sawtooth :: proc "contextless" (
+	node: Sawtooth,
+	param: u32,
+	low: Freq,
+	high: Freq,
+	mod: Modulator,
+) {
+	_modulate(node.id, 0, low.h, high.h, mod)
+}
+
+@(private)
+mod_triangle :: proc "contextless" (
+	node: Triangle,
+	param: u32,
+	low: Freq,
+	high: Freq,
+	mod: Modulator,
+) {
+	_modulate(node.id, 0, low.h, high.h, mod)
+}
+
+@(private)
+mod_gain :: proc "contextless" (node: Gain, param: u32, low: f32, high: f32, mod: Modulator) {
+	_modulate(node.id, 0, low, high, mod)
+}
+
+@(private)
+mod_pan :: proc "contextless" (node: Pan, param: u32, low: f32, high: f32, mod: Modulator) {
+	_modulate(node.id, 0, low, high, mod)
+}
+
+@(private)
+mod_mute :: proc "contextless" (node: Mute, param: u32, low: f32, high: f32, mod: Modulator) {
+	_modulate(node.id, 0, low, high, mod)
+}
+
+@(private)
+mod_pause :: proc "contextless" (node: Pause, param: u32, low: f32, high: f32, mod: Modulator) {
+	_modulate(node.id, 0, low, high, mod)
+}
+
+@(private)
+mod_low_pass :: proc "contextless" (
+	node: LowPass,
+	param: u32,
+	low: Freq,
+	high: Freq,
+	mod: Modulator,
+) {
+	_modulate(node.id, 0, low.h, high.h, mod)
+}
+
+@(private)
+mod_high_pass :: proc "contextless" (
+	node: HighPass,
+	param: u32,
+	low: Freq,
+	high: Freq,
+	mod: Modulator,
+) {
+	_modulate(node.id, 0, low.h, high.h, mod)
+}
+
+@(private)
+mod_clip :: proc "contextless" (node: Clip, param: u32, low: f32, high: f32, mod: Modulator) {
+	_modulate(node.id, 0, low, high, mod)
+}
+
+@(private)
+_modulate :: proc "contextless" (node_id: u32, param: u32, low: f32, high: f32, mod: Modulator) {
+	switch mod in mod {
+	case LinearModulator:
+		b_mod_linear(node_id, param, low, high, mod.start_at.s, mod.end_at.s)
+	case HoldModulator:
+		b_mod_hold(node_id, param, low, high, mod.time.s)
+	case AdsrModulator:
+		b_mod_adsr(
+			node_id,
+			param,
+			low,
+			high,
+			mod.attack.s,
+			mod.decay.s,
+			mod.sustain.s,
+			mod.sustain_level,
+			mod.release.s,
+		)
+	case SineModulator:
+		b_mod_sine(node_id, param, mod.freq.h, low, high)
+	case SquareModulator:
+		b_mod_square(node_id, param, low, high, mod.period.s)
+	case SawtoothModulator:
+		b_mod_sawtooth(node_id, param, low, high, mod.period.s)
+	}
+}
+
+
 foreign import "audio"
 
 @(private)
@@ -379,5 +614,19 @@ foreign audio {
 	b_clear :: proc "contextless" (node_id: u32) ---
 	@(link_name = "set_param")
 	b_set_param :: proc "contextless" (node_id: u32, param: u32, val: f32) ---
+
+
+	@(link_name = "mod_linear")
+	b_mod_linear :: proc "contextless" (node_id: u32, param: u32, start: f32, end: f32, start_at: u32, end_at: u32) ---
+	@(link_name = "mod_hold")
+	b_mod_hold :: proc "contextless" (id: u32, param: u32, low: f32, high: f32, time: u32) ---
+	@(link_name = "mod_sine")
+	b_mod_sine :: proc "contextless" (id: u32, param: u32, freq: f32, low: f32, high: f32) ---
+	@(link_name = "mod_square")
+	b_mod_square :: proc "contextless" (id: u32, param: u32, low: f32, high: f32, period: u32) ---
+	@(link_name = "mod_sawtooth")
+	b_mod_sawtooth :: proc "contextless" (id: u32, param: u32, low: f32, high: f32, period: u32) ---
+	@(link_name = "mod_adsr")
+	b_mod_adsr :: proc "contextless" (id: u32, param: u32, low: f32, high: f32, attack: u32, decay: u32, sustain: u32, sustain_level: f32, release: u32) ---
 
 }
