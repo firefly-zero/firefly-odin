@@ -623,6 +623,101 @@ _modulate :: proc "contextless" (node_id: u32, param: u32, low: f32, high: f32, 
 }
 
 
+// Set the value of the Node's main parameter.
+//
+// Only some parameters can be changed.
+set :: proc {
+	set_sine,
+	set_square,
+	set_sawtooth,
+	set_triangle,
+	set_file,
+	set_gain,
+	set_pan,
+	set_mute,
+	set_pause,
+	set_low_pass,
+	set_high_pass,
+	set_clip,
+}
+
+// Set oscillation frequency of a Sine node.
+@(private)
+set_sine :: proc "contextless" (node: Sine, param: u32, val: Freq) {
+	b_set_param(node.id, 0, val.h)
+}
+
+// Set oscillation frequency of a Square node.
+@(private)
+set_square :: proc "contextless" (node: Square, param: u32, val: Freq) {
+	b_set_param(node.id, 0, val.h)
+}
+
+// Set oscillation frequency of a Sawtooth node.
+@(private)
+set_sawtooth :: proc "contextless" (node: Sawtooth, param: u32, val: Freq) {
+	b_set_param(node.id, 0, val.h)
+}
+
+// Set oscillation frequency of a Triangle node.
+@(private)
+set_triangle :: proc "contextless" (node: Triangle, param: u32, val: Freq) {
+	b_set_param(node.id, 0, val.h)
+}
+
+// Go to the specified timestamp in the file.
+@(private)
+set_file :: proc "contextless" (node: File, param: u32, val: Time) {
+	b_set_param(node.id, 0, f32(val.s))
+}
+
+// Set the gain level of a Gain node.
+@(private)
+set_gain :: proc "contextless" (node: Gain, param: u32, val: f32) {
+	b_set_param(node.id, 0, val)
+}
+
+// Set the pan value (from 0. to 1.: 0. is only left, 1. is only right) of a Pan node.
+@(private)
+set_pan :: proc "contextless" (node: Pan, param: u32, val: f32) {
+	b_set_param(node.id, 0, val)
+}
+
+// Set the muted state of a Mute node.
+//
+// Below 0.5 is muted, above is unmuted.
+@(private)
+set_mute :: proc "contextless" (node: Mute, param: u32, val: f32) {
+	b_set_param(node.id, 0, val)
+}
+
+// Set the paused state of a Pause node.
+//
+// Below 0.5 is paused, above is playing.
+@(private)
+set_pause :: proc "contextless" (node: Pause, param: u32, val: f32) {
+	b_set_param(node.id, 0, val)
+}
+
+// Set the cut-off frequency of a LowPass node.
+@(private)
+set_low_pass :: proc "contextless" (node: LowPass, param: u32, val: Freq) {
+	b_set_param(node.id, 0, val.h)
+}
+
+// Set the cut-off frequency of a HighPass node.
+@(private)
+set_high_pass :: proc "contextless" (node: HighPass, param: u32, val: Freq) {
+	b_set_param(node.id, 0, val.h)
+}
+
+// Set the low cut amplitude (of a Clip node) and adjust the high amplitude to keep the gap.
+@(private)
+set_clip :: proc "contextless" (node: Clip, param: u32, val: f32) {
+	b_set_param(node.id, 0, val)
+}
+
+
 foreign import "audio"
 
 @(private)
