@@ -1,12 +1,44 @@
 
 package audio
 
+// Samples played per second.
+SAMPLE_RATE :: 44_100
+
+// Frequency.
+//
+// Constructed by `hz`.
 Freq :: struct {
 	h: f32,
 }
 
+// One second.
+SECOND :: Freq{SAMPLE_RATE}
+
+// Frequency in Hz.
+hz :: proc(hz: f32) -> Freq {
+	return Freq{hz}
+}
+
+// Time or duration.
+//
+// Constructed by `samples`, `seconds`, or `ms`.
 Time :: struct {
 	s: u32,
+}
+
+// Time in number of samples.
+samples :: proc(s: u32) -> Time {
+	return Time{s}
+}
+
+// Time in seconds.
+seconds :: proc(s: u32) -> Time {
+	return Time{s * SAMPLE_RATE}
+}
+
+// Time in milliseconds.
+ms :: proc(s: u32) -> Time {
+	return Time{s * SAMPLE_RATE / 1000}
 }
 
 // Audio node created by `add_sine`.
@@ -124,6 +156,11 @@ Clip :: struct {
 	id: u32,
 }
 
+// The root audio node.
+Out :: struct {
+	id: u32,
+}
+
 SourceNode :: union #no_nil {
 	Sine,
 	Square,
@@ -135,6 +172,7 @@ SourceNode :: union #no_nil {
 }
 
 ParentNode :: union #no_nil {
+	Out,
 	File,
 	Mix,
 	AllForOne,
@@ -158,6 +196,7 @@ Node :: union #no_nil {
 	ParentNode,
 }
 
+OUT :: Out{}
 
 @(private)
 @(require_results)
@@ -182,6 +221,8 @@ get_node_id :: proc "contextless" (node: Node) -> u32 {
 		}
 	case ParentNode:
 		switch node in node {
+		case Out:
+			return node.id
 		case File:
 			return node.id
 		case Mix:
