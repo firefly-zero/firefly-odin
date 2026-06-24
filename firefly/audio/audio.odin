@@ -15,7 +15,7 @@ Freq :: struct {
 SECOND :: Freq{SAMPLE_RATE}
 
 // Frequency in Hz.
-hz :: proc(hz: f32) -> Freq {
+hz :: proc "contextless" (hz: f32) -> Freq {
 	return Freq{hz}
 }
 
@@ -27,17 +27,17 @@ Time :: struct {
 }
 
 // Time in number of samples.
-samples :: proc(s: u32) -> Time {
+samples :: proc "contextless" (s: u32) -> Time {
 	return Time{s}
 }
 
 // Time in seconds.
-seconds :: proc(s: u32) -> Time {
+seconds :: proc "contextless" (s: u32) -> Time {
 	return Time{s * SAMPLE_RATE}
 }
 
 // Time in milliseconds.
-ms :: proc(s: u32) -> Time {
+ms :: proc "contextless" (s: u32) -> Time {
 	return Time{s * SAMPLE_RATE / 1000}
 }
 
@@ -292,6 +292,7 @@ Clip :: struct {
 }
 
 // The root audio node.
+@(private)
 Out :: struct {
 	id: u32,
 }
@@ -672,55 +673,37 @@ modulate :: proc {
 
 // Modulate oscillation frequency of a Sine node.
 @(private)
-mod_sine :: proc "contextless" (node: Sine, param: u32, low: Freq, high: Freq, mod: Modulator) {
+mod_sine :: proc "contextless" (node: Sine, low: Freq, high: Freq, mod: Modulator) {
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
 // Modulate oscillation frequency of a Square node.
 @(private)
-mod_square :: proc "contextless" (
-	node: Square,
-	param: u32,
-	low: Freq,
-	high: Freq,
-	mod: Modulator,
-) {
+mod_square :: proc "contextless" (node: Square, low: Freq, high: Freq, mod: Modulator) {
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
 // Modulate oscillation frequency of a Sawtooth node.
 @(private)
-mod_sawtooth :: proc "contextless" (
-	node: Sawtooth,
-	param: u32,
-	low: Freq,
-	high: Freq,
-	mod: Modulator,
-) {
+mod_sawtooth :: proc "contextless" (node: Sawtooth, low: Freq, high: Freq, mod: Modulator) {
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
 // Modulate oscillation frequency of a Triangle node.
 @(private)
-mod_triangle :: proc "contextless" (
-	node: Triangle,
-	param: u32,
-	low: Freq,
-	high: Freq,
-	mod: Modulator,
-) {
+mod_triangle :: proc "contextless" (node: Triangle, low: Freq, high: Freq, mod: Modulator) {
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
 // Modulate the gain level of a Gain node.
 @(private)
-mod_gain :: proc "contextless" (node: Gain, param: u32, low: f32, high: f32, mod: Modulator) {
+mod_gain :: proc "contextless" (node: Gain, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
 // Modulate the pan value (from 0. to 1.: 0. is only left, 1. is only right) of a Pan node.
 @(private)
-mod_pan :: proc "contextless" (node: Pan, param: u32, low: f32, high: f32, mod: Modulator) {
+mod_pan :: proc "contextless" (node: Pan, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
@@ -728,7 +711,7 @@ mod_pan :: proc "contextless" (node: Pan, param: u32, low: f32, high: f32, mod: 
 //
 // Below 0.5 is muted, above is unmuted.
 @(private)
-mod_mute :: proc "contextless" (node: Mute, param: u32, low: f32, high: f32, mod: Modulator) {
+mod_mute :: proc "contextless" (node: Mute, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
@@ -736,37 +719,25 @@ mod_mute :: proc "contextless" (node: Mute, param: u32, low: f32, high: f32, mod
 //
 // Below 0.5 is paused, above is playing.
 @(private)
-mod_pause :: proc "contextless" (node: Pause, param: u32, low: f32, high: f32, mod: Modulator) {
+mod_pause :: proc "contextless" (node: Pause, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
 // Modulate the cut-off frequency of a LowPass node.
 @(private)
-mod_low_pass :: proc "contextless" (
-	node: LowPass,
-	param: u32,
-	low: Freq,
-	high: Freq,
-	mod: Modulator,
-) {
+mod_low_pass :: proc "contextless" (node: LowPass, low: Freq, high: Freq, mod: Modulator) {
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
 // Modulate the cut-off frequency of a HighPass node.
 @(private)
-mod_high_pass :: proc "contextless" (
-	node: HighPass,
-	param: u32,
-	low: Freq,
-	high: Freq,
-	mod: Modulator,
-) {
+mod_high_pass :: proc "contextless" (node: HighPass, low: Freq, high: Freq, mod: Modulator) {
 	_modulate(node.id, 0, low.h, high.h, mod)
 }
 
 // Modulate the low cut amplitude (of a Clip node) and adjust the high amplitude to keep the gap.
 @(private)
-mod_clip :: proc "contextless" (node: Clip, param: u32, low: f32, high: f32, mod: Modulator) {
+mod_clip :: proc "contextless" (node: Clip, low: f32, high: f32, mod: Modulator) {
 	_modulate(node.id, 0, low, high, mod)
 }
 
@@ -819,43 +790,43 @@ set :: proc {
 
 // Set oscillation frequency of a Sine node.
 @(private)
-set_sine :: proc "contextless" (node: Sine, param: u32, val: Freq) {
+set_sine :: proc "contextless" (node: Sine, val: Freq) {
 	b_set_param(node.id, 0, val.h)
 }
 
 // Set oscillation frequency of a Square node.
 @(private)
-set_square :: proc "contextless" (node: Square, param: u32, val: Freq) {
+set_square :: proc "contextless" (node: Square, val: Freq) {
 	b_set_param(node.id, 0, val.h)
 }
 
 // Set oscillation frequency of a Sawtooth node.
 @(private)
-set_sawtooth :: proc "contextless" (node: Sawtooth, param: u32, val: Freq) {
+set_sawtooth :: proc "contextless" (node: Sawtooth, val: Freq) {
 	b_set_param(node.id, 0, val.h)
 }
 
 // Set oscillation frequency of a Triangle node.
 @(private)
-set_triangle :: proc "contextless" (node: Triangle, param: u32, val: Freq) {
+set_triangle :: proc "contextless" (node: Triangle, val: Freq) {
 	b_set_param(node.id, 0, val.h)
 }
 
 // Go to the specified timestamp in the file.
 @(private)
-set_file :: proc "contextless" (node: File, param: u32, val: Time) {
+set_file :: proc "contextless" (node: File, val: Time) {
 	b_set_param(node.id, 0, f32(val.s))
 }
 
 // Set the gain level of a Gain node.
 @(private)
-set_gain :: proc "contextless" (node: Gain, param: u32, val: f32) {
+set_gain :: proc "contextless" (node: Gain, val: f32) {
 	b_set_param(node.id, 0, val)
 }
 
 // Set the pan value (from 0. to 1.: 0. is only left, 1. is only right) of a Pan node.
 @(private)
-set_pan :: proc "contextless" (node: Pan, param: u32, val: f32) {
+set_pan :: proc "contextless" (node: Pan, val: f32) {
 	b_set_param(node.id, 0, val)
 }
 
@@ -863,7 +834,7 @@ set_pan :: proc "contextless" (node: Pan, param: u32, val: f32) {
 //
 // Below 0.5 is muted, above is unmuted.
 @(private)
-set_mute :: proc "contextless" (node: Mute, param: u32, val: f32) {
+set_mute :: proc "contextless" (node: Mute, val: f32) {
 	b_set_param(node.id, 0, val)
 }
 
@@ -871,25 +842,25 @@ set_mute :: proc "contextless" (node: Mute, param: u32, val: f32) {
 //
 // Below 0.5 is paused, above is playing.
 @(private)
-set_pause :: proc "contextless" (node: Pause, param: u32, val: f32) {
+set_pause :: proc "contextless" (node: Pause, val: f32) {
 	b_set_param(node.id, 0, val)
 }
 
 // Set the cut-off frequency of a LowPass node.
 @(private)
-set_low_pass :: proc "contextless" (node: LowPass, param: u32, val: Freq) {
+set_low_pass :: proc "contextless" (node: LowPass, val: Freq) {
 	b_set_param(node.id, 0, val.h)
 }
 
 // Set the cut-off frequency of a HighPass node.
 @(private)
-set_high_pass :: proc "contextless" (node: HighPass, param: u32, val: Freq) {
+set_high_pass :: proc "contextless" (node: HighPass, val: Freq) {
 	b_set_param(node.id, 0, val.h)
 }
 
 // Set the low cut amplitude (of a Clip node) and adjust the high amplitude to keep the gap.
 @(private)
-set_clip :: proc "contextless" (node: Clip, param: u32, val: f32) {
+set_clip :: proc "contextless" (node: Clip, val: f32) {
 	b_set_param(node.id, 0, val)
 }
 
