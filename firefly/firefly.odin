@@ -389,6 +389,50 @@ draw_sub_image :: proc "contextless" (i: SubImage, p: Point) {
 	)
 }
 
+// Tile the given screen area with the provided sub-image.
+draw_sub_tile :: proc "contextless" (i: SubImage, p: Point, s: Size) {
+	rawPtr := cast(uintptr)raw_data(i.image._raw)
+	b_draw_sub_tile(
+		rawPtr,
+		cast(u32)(len(i.image._raw)),
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)s.w,
+		cast(i32)s.h,
+		cast(i32)i.point.x,
+		cast(i32)i.point.y,
+		cast(u32)i.size.w,
+		cast(u32)i.size.h,
+	)
+}
+
+// Fill the given area with the given 9-slice.
+//
+// A 9-slice is used to tile an area with 9 sub-images: 4 corners,
+// 4 edges, and 1 middle segment. It is useful for speech bubbles
+// and other stylish boxes.
+//
+// The whole image is the 9-slice. The sub-image is the center area of the 9-slice.
+//
+// If the target area is bigger than the 9-slice segments,
+// all the segments (except corners) are repeated ("tiled")
+// without stretching or mirroring.
+draw_nine_slice :: proc "contextless" (i: SubImage, p: Point, s: Size) {
+	rawPtr := cast(uintptr)raw_data(i.image._raw)
+	b_draw_nine_slice(
+		rawPtr,
+		cast(u32)(len(i.image._raw)),
+		cast(i32)p.x,
+		cast(i32)p.y,
+		cast(i32)s.w,
+		cast(i32)s.h,
+		cast(i32)i.point.x,
+		cast(i32)i.point.y,
+		cast(u32)i.size.w,
+		cast(u32)i.size.h,
+	)
+}
+
 // Set the target image for all subsequent drawing operations.
 set_canvas :: proc "contextless" (c: Canvas) {
 	rawPtr := cast(uintptr)raw_data(c._raw)
@@ -1038,6 +1082,10 @@ foreign graphics {
 	b_draw_image :: proc "contextless" (ptr: uintptr, size: u32, x, y: i32) ---
 	@(link_name = "draw_sub_image")
 	b_draw_sub_image :: proc "contextless" (ptr: uintptr, size: u32, x, y, subX, subY: i32, subWidth, subHeight: u32) ---
+	@(link_name = "draw_sub_tile")
+	b_draw_sub_tile :: proc "contextless" (ptr: uintptr, size: u32, x, y, w, h, subX, subY: i32, subWidth, subHeight: u32) ---
+	@(link_name = "draw_nine_slice")
+	b_draw_nine_slice :: proc "contextless" (ptr: uintptr, size: u32, x, y, w, h, subX, subY: i32, subWidth, subHeight: u32) ---
 	@(link_name = "set_canvas")
 	b_set_canvas :: proc "contextless" (ptr: uintptr, size: u32) ---
 	@(link_name = "unset_canvas")
