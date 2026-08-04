@@ -934,6 +934,11 @@ Settings :: struct {
 	easter_eggs:     bool,
 }
 
+Duration :: struct {
+	// Microseconds.
+	us: i64,
+}
+
 // Log a debug message.
 log_debug :: proc "contextless" (t: string) {
 	ptr := cast(uintptr)raw_data(t)
@@ -955,6 +960,12 @@ set_seed :: proc "contextless" (seed: u32) {
 @(require_results)
 get_random :: proc "contextless" () -> u32 {
 	return b_get_random()
+}
+
+// Get the time passed since the app was started.
+@(require_results)
+get_time :: proc "contextless" () -> Duration {
+	return Duration{us = b_get_time()}
 }
 
 // Get human-readable name of the given peer.
@@ -1147,6 +1158,8 @@ foreign misc {
 	b_set_seed :: proc "contextless" (seed: u32) ---
 	@(link_name = "get_random")
 	b_get_random :: proc "contextless" () -> u32 ---
+	@(link_name = "get_time")
+	b_get_time :: proc "contextless" () -> i64 ---
 	@(link_name = "get_name")
 	b_get_name :: proc "contextless" (index: u32, ptr: uintptr) -> u32 ---
 	@(link_name = "get_settings")
