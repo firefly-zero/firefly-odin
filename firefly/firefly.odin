@@ -869,6 +869,34 @@ remove_file :: proc "contextless" (path: string) {
 
 
 // ---------- //
+// -- MENU -- //
+// ---------- //
+_ :: 0
+
+// Add a custom item on the app menu.
+//
+// The `i` index is the value passed into the `handle_menu` callback
+// when the menu item is selected by the user.
+// Its value doesn't have to be unique or continious.
+add_menu_item :: proc "contextless" (idx: u32, text: string) {
+	textPtr := cast(uintptr)raw_data(text)
+	b_add_menu_item(idx, textPtr, cast(u32)(len(text)))
+}
+
+// Remove a custom menu item with the given index.
+remove_menu_item :: proc "contextless" (idx: u32) {
+	b_remove_menu_item(idx)
+}
+
+// Open the app menu.
+//
+// It will be opened before the next update.
+// The current update and then render will proceed as planned.
+open_menu :: proc "contextless" () {
+	b_open_menu()
+}
+
+// ---------- //
 // -- MISC -- //
 // ---------- //
 _ :: 0
@@ -1058,6 +1086,7 @@ foreign import "input"
 foreign import "net"
 foreign import "stats"
 foreign import "fs"
+foreign import "menu"
 foreign import "misc"
 
 @(private)
@@ -1145,6 +1174,17 @@ foreign stats {
 	b_add_progress :: proc "contextless" (peerID, badgeID: u32, val: i32) -> u32 ---
 	@(link_name = "add_score")
 	b_add_score :: proc "contextless" (peerID, boardID: u32, val: i32) -> i32 ---
+}
+
+@(private)
+@(default_calling_convention = "contextless")
+foreign menu {
+	@(link_name = "add_menu_item")
+	b_add_menu_item :: proc "contextless" (idx: u32, ptr: uintptr, size: u32) ---
+	@(link_name = "remove_menu_item")
+	b_remove_menu_item :: proc "contextless" (idx: u32) ---
+	@(link_name = "open_menu")
+	b_open_menu :: proc "contextless" () ---
 }
 
 @(private)
