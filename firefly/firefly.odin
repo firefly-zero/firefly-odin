@@ -190,24 +190,31 @@ sub_image :: proc "contextless" (i: Image, p: Point, s: Size) -> SubImage {
 	return SubImage{i, p, s}
 }
 
-// Canvas is an [Image] that can be drawn upon.
-Canvas :: struct {
-	_raw: []byte,
-}
-
-// Create a new [Canvas].
+// Create a new empty image of the given size.
 //
-// The Canvas is allocated on heap.
+// The given color is used as the transparency color.
+// if [Color.None] is given, then the image will not have transparency
+// and it will be filled with [Color.Black] by default.
+//
+// Use [set_canvas] (or [with_canvas]) and the drawing functions
+// to fill the newly created image.
 @(require_results)
-canvas_buf :: proc(s: Size) -> Canvas {
+empty_image :: proc(s: Size, transp: Color) -> Image {
 	headerSize := 4
 	bodySize := s.w * s.h / 2
+	t := byte(transp) - 1
 	raw := make([]byte, headerSize + bodySize)
 	raw[0] = 0x22 // magic number
 	raw[1] = byte(s.w) // width
 	raw[2] = byte(s.w >> 8) // width
-	raw[3] = 255 // transparency
-	return Canvas{raw}
+	raw[3] = t // transparency
+	if t != 255 && t != 0 {
+		b := t | (t << 4)
+		for i := headerSize; i < len(raw); i += 1 {
+			raw[i] = b
+		}
+	}
+	return Image{raw}
 }
 
 // Fill the whole frame with the given color.
@@ -448,9 +455,9 @@ draw_nine_slice :: proc "contextless" (i: SubImage, p: Point, s: Size) {
 }
 
 // Set the target image for all subsequent drawing operations.
-set_canvas :: proc "contextless" (c: Canvas) {
-	rawPtr := cast(uintptr)raw_data(c._raw)
-	b_set_canvas(rawPtr, cast(u32)(len(c._raw)))
+set_canvas :: proc "contextless" (i: Image) {
+	rawPtr := cast(uintptr)raw_data(i._raw)
+	b_set_canvas(rawPtr, cast(u32)(len(i._raw)))
 }
 
 // Make all subsequent drawing operations target the screen instead of a canvas.
