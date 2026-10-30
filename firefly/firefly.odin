@@ -215,6 +215,20 @@ clear_screen :: proc "contextless" (c: Color) {
 	b_clear_screen(cast(i32)c)
 }
 
+// Horizontally flip the image currently rendered on the screen.
+//
+// Most commonly used together with [set_canvas] to flip images (sprites).
+flip_x :: proc "contextless" () {
+	b_flip_x()
+}
+
+// Vertically flip the image currently rendered on the screen.
+//
+// Most commonly used together with [set_canvas] to flip images (sprites).
+flip_y :: proc "contextless" () {
+	b_flip_y()
+}
+
 // Set a color value in the palette.
 set_color :: proc "contextless" (c: Color, v: RGB) {
 	b_set_color(cast(i32)c, cast(i32)v.r, cast(i32)v.g, cast(i32)v.b)
@@ -1094,6 +1108,10 @@ foreign import "misc"
 foreign graphics {
 	@(link_name = "clear_screen")
 	b_clear_screen :: proc "contextless" (c: i32) ---
+	@(link_name = "flip_x")
+	b_flip_x :: proc "contextless" () ---
+	@(link_name = "flip_y")
+	b_flip_y :: proc "contextless" () ---
 	@(link_name = "set_color")
 	b_set_color :: proc "contextless" (c, r, g, b: i32) ---
 	@(link_name = "draw_point")
