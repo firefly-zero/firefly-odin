@@ -454,6 +454,13 @@ draw_nine_slice :: proc "contextless" (i: SubImage, p: Point, s: Size) {
 	)
 }
 
+// Run the function with all drawing operations being executed on the canvas.
+with_canvas :: proc "contextless" (i: Image, f: proc "contextless" ()) {
+	set_canvas(i)
+	f()
+	unset_canvas()
+}
+
 // Set the target image for all subsequent drawing operations.
 set_canvas :: proc "contextless" (i: Image) {
 	rawPtr := cast(uintptr)raw_data(i._raw)
@@ -462,7 +469,7 @@ set_canvas :: proc "contextless" (i: Image) {
 
 // Make all subsequent drawing operations target the screen instead of a canvas.
 //
-// Cancels the effect of [SetCanvas].
+// Cancels the effect of [set_canvas].
 unset_canvas :: proc "contextless" () {
 	b_unset_canvas()
 }
