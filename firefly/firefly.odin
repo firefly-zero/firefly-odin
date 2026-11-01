@@ -678,7 +678,7 @@ is_me :: proc "contextless" (me: Me, p: Peer) -> bool {
 // The list of peers online.
 //
 // Can be obtained using [get_peers].
-Peers :: []Peer
+Peers :: [dynamic; 32]Peer
 
 // Stash is a serialized binary state of the app that you want to persist
 // between app runs and to be available in multiplayer.
@@ -713,7 +713,7 @@ get_peers :: proc "contextless" () -> Peers {
 			append(&res, peer)
 		}
 	}
-	return res[:]
+	return res
 }
 
 // Save the given [Stash].
