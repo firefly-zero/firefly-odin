@@ -576,26 +576,23 @@ dpad8 :: proc "contextless" (p: Pad) -> DPad8 {
 Buttons :: struct {
 	// South. The bottom button, like A on the X-Box controller.
 	//
-	// Typically used for confirmation, main action, jump, etc.
-	s:    bool,
+	// Typically used for jump, crawl..
+	s: bool,
 
 	// East. The right button, like B on the X-Box controller.
 	//
-	// Typically used for cancellation, going to previous screen, etc.
-	e:    bool,
+	// Typically used for attack, accept, ok, select, interact, next list item..
+	e: bool,
 
 	// West. The left button, like X on the X-Box controller.
 	//
-	// Typically used for attack.
-	w:    bool,
+	// Typically used for cancel, back, exit, previous list item..
+	w: bool,
 
 	// North. The top button, like Y on the X-Box controller.
 	//
-	// Typically used for a secondary action, like charged attack.
-	n:    bool,
-
-	// The menu button, almost always handled by the runtime.
-	menu: bool,
+	// Typically used for alt attack, open inventory, open map, open in-game menu..
+	n: bool,
 }
 
 // Get the current touch pad state.
@@ -623,7 +620,6 @@ read_buttons :: proc "contextless" (p: Peer) -> Buttons {
 		e = has_bit_set(raw, 1),
 		w = has_bit_set(raw, 2),
 		n = has_bit_set(raw, 3),
-		menu = has_bit_set(raw, 4),
 	}
 }
 
